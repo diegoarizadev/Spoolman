@@ -427,3 +427,52 @@ class SettingEvent(Event):
 
     payload: SettingKV = Field(description="Updated setting.")
     resource: Literal["setting"] = Field(description="Resource type.")
+
+
+class PurgeCalibration(BaseModel):
+    id: int = Field(description="Unique internal ID of this purge calibration.")
+    registered: SpoolmanDateTime = Field(description="When the calibration was registered. UTC Timezone.")
+    from_filament: Filament = Field(description="The outgoing filament.")
+    to_filament: Filament = Field(description="The incoming filament.")
+    purge_volume: float = Field(ge=0, description="The purge volume in mm3.")
+    multiplication_factor: float = Field(ge=0, description="The multiplication factor.")
+    nozzle_size: float = Field(gt=0, description="The nozzle size in mm.")
+    print_temp: int = Field(ge=0, description="The printing temperature in °C.")
+    image_path: str | None = Field(None, description="Path to the test image.")
+    comment: str | None = Field(None, max_length=1024, description="Comment about this calibration.")
+
+    @staticmethod
+    def from_db(item: models.PurgeCalibration) -> "PurgeCalibration":
+        """Create a new Pydantic PurgeCalibration object from a database object."""
+        return PurgeCalibration(
+            id=item.id,
+            registered=item.registered,
+            from_filament=Filament.from_db(item.from_filament),
+            to_filament=Filament.from_db(item.to_filament),
+            purge_volume=item.purge_volume,
+            multiplication_factor=item.multiplication_factor,
+            nozzle_size=item.nozzle_size,
+            print_temp=item.print_temp,
+            image_path=item.image_path,
+            comment=item.comment,
+        )
+
+
+class PurgeCalibrationCreate(BaseModel):
+    from_filament_id: int = Field(description="The outgoing filament ID.")
+    to_filament_id: int = Field(description="The incoming filament ID.")
+    purge_volume: float = Field(ge=0, description="The purge volume in mm3.")
+    multiplication_factor: float = Field(1.0, ge=0, description="The multiplication factor.")
+    nozzle_size: float = Field(gt=0, description="The nozzle size in mm.")
+    print_temp: int = Field(ge=0, description="The printing temperature in °C.")
+    comment: str | None = Field(None, max_length=1024, description="Comment about this calibration.")
+
+
+class PurgeCalibrationUpdate(BaseModel):
+    from_filament_id: int | None = Field(None, description="The outgoing filament ID.")
+    to_filament_id: int | None = Field(None, description="The incoming filament ID.")
+    purge_volume: float | None = Field(None, ge=0, description="The purge volume in mm3.")
+    multiplication_factor: float | None = Field(None, ge=0, description="The multiplication factor.")
+    nozzle_size: float | None = Field(None, gt=0, description="The nozzle size in mm.")
+    print_temp: int | None = Field(None, ge=0, description="The printing temperature in °C.")
+    comment: str | None = Field(None, max_length=1024, description="Comment about this calibration.")

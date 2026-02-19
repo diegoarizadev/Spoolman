@@ -1,6 +1,7 @@
+import React, { useState } from "react";
 import { DateField, TextField } from "@refinedev/antd";
 import { UseQueryResult } from "@tanstack/react-query";
-import { Button, Col, Dropdown, Row, Space, Spin } from "antd";
+import { Button, Col, Dropdown, Modal, Row, Space, Spin } from "antd";
 import { ColumnFilterItem, ColumnType } from "antd/es/table/interface";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -36,6 +37,7 @@ export interface Action {
   icon: React.ReactNode;
   link?: string;
   onClick?: () => void;
+  component?: React.ReactNode;
 }
 
 interface BaseColumnProps<Obj extends Entity> {
@@ -276,6 +278,9 @@ export function ActionsColumn<Obj extends Entity>(
     responsive: ["lg"],
     render: (_, record) => {
       const buttons = actionsFn(record).map((action) => {
+        if (action.component) {
+          return <React.Fragment key={action.name}>{action.component}</React.Fragment>;
+        }
         if (action.link) {
           return (
             <Link key={action.name} to={action.link}>
@@ -479,4 +484,48 @@ export function CustomFieldColumn<Obj extends Entity>(props: Omit<BaseColumnProp
       },
     });
   }
+}
+
+function ImageThumbnail({ url }: { url: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <img
+        src={url}
+        alt="Thumbnail"
+        style={{ width: 50, height: 50, objectFit: "cover", borderRadius: 4, cursor: "zoom-in" }}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen(true);
+        }}
+      />
+      <Modal
+        open={open}
+        onCancel={() => setOpen(false)}
+        footer={null}
+        centered
+        width="auto"
+        styles={{ body: { padding: 0, lineHeight: 0 } }}
+      >
+        <img
+          src={url}
+          alt="Full size"
+          style={{ maxWidth: "90vw", maxHeight: "85vh", display: "block", borderRadius: 4 }}
+        />
+      </Modal>
+    </>
+  );
+}
+
+export function ImageColumn<Obj extends Entity>(props: BaseColumnProps<Obj> & { getUrl: (record: Obj) => string | undefined }) {
+  return Column({
+    ...props,
+    render: (_, record) => {
+      const url = props.getUrl(record);
+      if (!url) {
+        return null;
+      }
+      return <ImageThumbnail url={url} />;
+    },
+  });
 }

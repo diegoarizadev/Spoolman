@@ -72,3 +72,5 @@ register_setting("base_url", SettingType.STRING, json.dumps(""))
 
 register_setting("locations", SettingType.ARRAY, json.dumps([]))
 register_setting("locations_spoolorders", SettingType.OBJECT, json.dumps({}))
+
+register_setting("purge_nozzle_sizes", SettingType.ARRAY, json.dumps([0.4, 0.2]))

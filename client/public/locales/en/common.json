@@ -29,7 +29,8 @@
         "showArchived": "Show Archived",
         "notAccessTitle": "You don't have permission to access",
         "hideColumns": "Hide Columns",
-        "clearFilters": "Clear Filters"
+        "clearFilters": "Clear Filters",
+        "upload": "Upload Image"
     },
     "warnWhenUnsavedChanges": "Are you sure you want to leave? You have unsaved changes.",
     "notifications": {
@@ -395,5 +396,61 @@
         "new_location": "New Location",
         "no_location": "No Location",
         "no_locations_help": "This page lets you organize your spools in locations, add some spools to get started!"
+    },
+    "purge": {
+        "purge": "Purge Calibrations",
+        "titles": {
+            "list": "Purge Library",
+            "create": "Register Purge Calibration"
+        },
+        "fields": {
+            "id": "ID",
+            "image": "Image",
+            "from_filament": "From Filament",
+            "to_filament": "To Filament",
+            "purge_volume": "Purge Volume",
+            "multiplication_factor": "Factor",
+            "nozzle_size": "Nozzle",
+            "print_temp": "Temp",
+            "registered": "Registered",
+            "comment": "Comment"
+        },
+        "buttons": {
+            "calculateMatrix": "Calculate Purge Matrix",
+            "registerPurge": "Register Purge"
+        },
+        "form": {
+            "click_or_drag_image": "Click or drag image to this area to upload",
+            "take_photo": "Take Photo",
+            "new_image": "New image",
+            "zoom_image": "View full image",
+            "remove_new_image": "Remove new image"
+        },
+        "camera": {
+            "title": "Take a Photo",
+            "capture": "Capture",
+            "usePhoto": "Use this photo",
+            "retake": "Retake",
+            "flipCamera": "Flip camera",
+            "hint": "Position the camera and press Capture.",
+            "errorNotAllowed": "Camera access was denied. Please allow camera access in your browser settings.",
+            "errorNotFound": "No camera found on this device.",
+            "errorInsecure": "Camera requires a secure connection (HTTPS).",
+            "errorUnknown": "Could not access the camera. Please try again."
+        },
+        "messages": {
+            "selectTwoFilaments": "Please select at least two different filaments to calculate the matrix.",
+            "duplicateWarning": "A purge calibration already exists for this filament pair. If you confirm, the current values (volume, factor, temperature and image) will be replaced. Do you want to update the existing configuration?",
+            "duplicateTitle": "⚠️ Configuration already exists",
+            "duplicateOk": "Yes, update",
+            "duplicateCancel": "No, cancel"
+        },
+        "settings": {
+            "tab": "Purge Cal.",
+            "nozzle_sizes": {
+                "label": "Nozzle Sizes",
+                "help": "Configure the nozzle sizes that will be available in the purge forms."
+            }
+        }
     }
 }

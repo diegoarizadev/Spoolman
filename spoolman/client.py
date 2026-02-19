@@ -24,8 +24,17 @@ class SinglePageApplication(StaticFiles):
         """Construct."""
         super().__init__(directory=directory, packages=None, html=True, check_dir=True)
         self.base_path = base_path.removeprefix("/")
-
         self.load_and_tweak_index_file()
+
+    async def __call__(self, scope: Scope, receive: Any, send: Any) -> None:
+        """Handle ASGI calls, ignoring WebSocket connections (Starlette 0.50+ compat)."""
+        if scope["type"] != "http":
+            # WebSocket or lifespan connections should not be handled by StaticFiles.
+            # In Starlette 0.50+, StaticFiles raises AssertionError for non-HTTP scopes.
+            # Silently skip so the WebSocket handler in the API router can handle it.
+            return
+        await super().__call__(scope, receive, send)
+
 
     def load_and_tweak_index_file(self) -> None:
         """Load index.html and tweak it by replacing all asset paths."""

@@ -116,3 +116,21 @@ class SpoolField(Base):
     spool: Mapped["Spool"] = relationship(back_populates="extra")
     key: Mapped[str] = mapped_column(String(64), primary_key=True, index=True)
     value: Mapped[str] = mapped_column(Text())
+
+
+class PurgeCalibration(Base):
+    __tablename__ = "purge_calibration"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    registered: Mapped[datetime] = mapped_column()
+    from_filament_id: Mapped[int] = mapped_column(ForeignKey("filament.id", ondelete="CASCADE"), index=True)
+    to_filament_id: Mapped[int] = mapped_column(ForeignKey("filament.id", ondelete="CASCADE"), index=True)
+    purge_volume: Mapped[float] = mapped_column()
+    multiplication_factor: Mapped[float] = mapped_column(default=1.0)
+    nozzle_size: Mapped[float] = mapped_column()
+    print_temp: Mapped[int] = mapped_column()
+    image_path: Mapped[str | None] = mapped_column(String(512))
+    comment: Mapped[str | None] = mapped_column(String(1024))
+
+    from_filament: Mapped["Filament"] = relationship(foreign_keys=[from_filament_id])
+    to_filament: Mapped["Filament"] = relationship(foreign_keys=[to_filament_id])

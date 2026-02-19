@@ -1,4 +1,4 @@
-import { FileOutlined, HighlightOutlined, SolutionOutlined, ToolOutlined, UserOutlined } from "@ant-design/icons";
+import { ExperimentOutlined, FileOutlined, HighlightOutlined, SolutionOutlined, ToolOutlined, UserOutlined } from "@ant-design/icons";
 import { useTranslate } from "@refinedev/core";
 import { Menu, theme } from "antd";
 import { Content } from "antd/es/layout/layout";
@@ -7,6 +7,7 @@ import utc from "dayjs/plugin/utc";
 import { Route, Routes, useNavigate } from "react-router";
 import { ExtraFieldsSettings } from "./extraFieldsSettings";
 import { GeneralSettings } from "./generalSettings";
+import { PurgeSettings } from "./purgeSettings";
 
 dayjs.extend(utc);
 
@@ -79,6 +80,11 @@ export const Settings = () => {
                 },
               ],
             },
+            {
+              key: "purge",
+              label: t("purge.settings.tab"),
+              icon: <ExperimentOutlined />,
+            },
           ]}
           style={{
             marginBottom: "1em",
@@ -88,6 +94,7 @@ export const Settings = () => {
           <Routes>
             <Route index element={<GeneralSettings />} />
             <Route path="/extra/:entityType" element={<ExtraFieldsSettings />} />
+            <Route path="/purge" element={<PurgeSettings />} />
           </Routes>
         </main>
       </Content>

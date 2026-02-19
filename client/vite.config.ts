@@ -52,4 +52,15 @@ export default defineConfig({
       },
     }),
   ],
+  server: {
+    proxy: {
+      "/api": "http://127.0.0.1:7912",
+      "/config.js": "http://127.0.0.1:7912",
+    },
+  },
+  define: {
+    // Hardcode VITE_APIURL to /api/v1 for production builds.
+    // In dev mode, the proxy above handles /api → backend.
+    "import.meta.env.VITE_APIURL": JSON.stringify(process.env.VITE_APIURL ?? "/api/v1"),
+  },
 });

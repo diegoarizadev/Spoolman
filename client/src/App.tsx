@@ -6,6 +6,7 @@ import { ErrorComponent } from "@refinedev/antd";
 import "@refinedev/antd/dist/reset.css";
 
 import {
+  ExperimentOutlined,
   FileOutlined,
   HighlightOutlined,
   HomeOutlined,
@@ -31,7 +32,7 @@ import { languages } from "./i18n";
 import { getAPIURL, getBasePath } from "./utils/url";
 
 interface ResourcePageProps {
-  resource: "spools" | "filaments" | "vendors";
+  resource: "spools" | "filaments" | "vendors" | "purge";
   page: "list" | "create" | "edit" | "show";
   mode?: "create" | "clone";
 }
@@ -151,6 +152,18 @@ function App() {
                   },
                 },
                 {
+                  name: "purge",
+                  list: "/purge",
+                  create: "/purge/create",
+                  edit: "/purge/edit/:id",
+                  show: "/purge/show/:id",
+                  meta: {
+                    canDelete: true,
+                    icon: <ExperimentOutlined />,
+                    label: t("purge.titles.list"),
+                  },
+                },
+                {
                   name: "settings",
                   list: "/settings",
                   meta: {
@@ -221,6 +234,15 @@ function App() {
                     />
                     <Route path="edit/:id" element={<LoadableResourcePage resource="vendors" page="edit" />} />
                     <Route path="show/:id" element={<LoadableResourcePage resource="vendors" page="show" />} />
+                  </Route>
+                  <Route path="/purge">
+                    <Route index element={<LoadableResourcePage resource="purge" page="list" />} />
+                    <Route
+                      path="create"
+                      element={<LoadableResourcePage resource="purge" page="create" mode="create" />}
+                    />
+                    <Route path="edit/:id" element={<LoadableResourcePage resource="purge" page="edit" />} />
+                    <Route path="show/:id" element={<LoadableResourcePage resource="purge" page="show" />} />
                   </Route>
                   <Route path="/settings/*" element={<LoadablePage name="settings" />} />
                   <Route path="/help" element={<LoadablePage name="help" />} />

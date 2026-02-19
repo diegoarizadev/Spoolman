@@ -29,7 +29,8 @@
         "hideColumns": "Ocultar Columnas",
         "clearFilters": "Borrar filtros",
         "saveAndAdd": "Guardar y añadir",
-        "continue": "Continuar"
+        "continue": "Continuar",
+        "upload": "Subir Imagen"
     },
     "warnWhenUnsavedChanges": "¿Estás seguro que quieres salir? Hay cambios sin guardar.",
     "notifications": {
@@ -408,5 +409,61 @@
         "new_location": "Nueva ubicación",
         "no_location": "Sin ubicación",
         "no_locations_help": "Esta página te permite organizar tus carretes en ubicaciones, ¡añade algunos carretes para empezar!"
+    },
+    "purge": {
+        "purge": "Calibraciones de Purga",
+        "titles": {
+            "list": "Librería de Purgas",
+            "create": "Registrar Calibración de Purga"
+        },
+        "fields": {
+            "id": "ID",
+            "image": "Imagen",
+            "from_filament": "Filamento Origen",
+            "to_filament": "Filamento Destino",
+            "purge_volume": "Volumen de Purga",
+            "multiplication_factor": "Factor",
+            "nozzle_size": "Boquilla",
+            "print_temp": "Temp",
+            "registered": "Registrado",
+            "comment": "Comentario"
+        },
+        "buttons": {
+            "calculateMatrix": "Calcular Matriz de Purga",
+            "registerPurge": "Registrar Purga"
+        },
+        "form": {
+            "click_or_drag_image": "Haga clic o arrastre la imagen a esta área para subirla",
+            "take_photo": "Tomar Foto",
+            "new_image": "Nueva imagen",
+            "zoom_image": "Ver imagen completa",
+            "remove_new_image": "Quitar nueva imagen"
+        },
+        "camera": {
+            "title": "Tomar una Foto",
+            "capture": "Capturar",
+            "usePhoto": "Usar esta foto",
+            "retake": "Volver a tomar",
+            "flipCamera": "Cambiar cámara",
+            "hint": "Posiciona la cámara y presiona Capturar.",
+            "errorNotAllowed": "Se denegó el acceso a la cámara. Por favor, permite el acceso en la configuración de tu navegador.",
+            "errorNotFound": "No se encontró ninguna cámara en este dispositivo.",
+            "errorInsecure": "La cámara requiere una conexión segura (HTTPS).",
+            "errorUnknown": "No se pudo acceder a la cámara. Por favor, inténtalo de nuevo."
+        },
+        "messages": {
+            "selectTwoFilaments": "Por favor, selecciona al menos dos filamentos diferentes para calcular la matriz.",
+            "duplicateWarning": "Ya existe una calibración de purga para este par de filamentos. Si confirmas, los valores actuales (volumen, factor, temperatura e imagen) serán reemplazados. ¿Deseas actualizar la configuración existente?",
+            "duplicateTitle": "⚠️ Configuración ya existente",
+            "duplicateOk": "Sí, actualizar",
+            "duplicateCancel": "No, cancelar"
+        },
+        "settings": {
+            "tab": "Cali. Purga",
+            "nozzle_sizes": {
+                "label": "Boquillas",
+                "help": "Configura los tamaños de boquilla que se mostrarán en los formularios de purga."
+            }
+        }
     }
 }

@@ -10,7 +10,8 @@ import {
 } from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
 import { useInvalidate, useNavigation, useTranslate } from "@refinedev/core";
-import { Button, Dropdown, Modal, Table } from "antd";
+import { Button, Dropdown, Modal, Table, message } from "antd";
+import { ExperimentOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useCallback, useMemo, useState } from "react";
@@ -161,6 +162,9 @@ export const SpoolList = () => {
   // Create state for the columns to show
   const [showColumns, setShowColumns] = useState<string[]>(initialState.showColumns ?? defaultColumns);
 
+  // State for row selection
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+
   // Store state in local storage
   const tableState: TableState = {
     sorters,
@@ -217,6 +221,11 @@ export const SpoolList = () => {
         { name: t("buttons.edit"), icon: <EditOutlined />, link: editUrl("spool", record.id) },
         { name: t("buttons.clone"), icon: <PlusSquareOutlined />, link: cloneUrl("spool", record.id) },
         { name: t("spool.titles.adjust"), icon: <ToolOutlined />, onClick: () => openSpoolAdjustModal(record) },
+        {
+          name: t("purge.buttons.registerPurge"),
+          icon: <ExperimentOutlined />,
+          link: `/purge/create?from=${record.filament.id}`,
+        },
       ];
       if (record.archived) {
         actions.push({
@@ -289,6 +298,24 @@ export const SpoolList = () => {
           >
             {t("buttons.clearFilters")}
           </Button>
+          <Button
+            type="primary"
+            icon={<ToolOutlined />}
+            disabled={selectedRowKeys.length === 0}
+            onClick={() => {
+              // Get the selected filaments
+              const selectedSpools = dataSource.filter((s) => selectedRowKeys.includes(s.id));
+              const filamentIds = [...new Set(selectedSpools.map((s) => s.filament.id))];
+              if (filamentIds.length < 2) {
+                message.warning(t("purge.messages.selectTwoFilaments"));
+                return;
+              }
+              // Navigate to the create page with selected filaments
+              navigate(`/purge/create?from=${filamentIds[0]}&to=${filamentIds[1]}`);
+            }}
+          >
+            {t("purge.buttons.calculateMatrix")}
+          </Button>
           <Dropdown
             trigger={["click"]}
             menu={{
@@ -328,6 +355,10 @@ export const SpoolList = () => {
       {spoolAdjustModal}
       <Table
         {...tableProps}
+        rowSelection={{
+          selectedRowKeys,
+          onChange: (keys) => setSelectedRowKeys(keys),
+        }}
         sticky
         tableLayout="auto"
         scroll={{ x: "max-content" }}
@@ -360,9 +391,9 @@ export const SpoolList = () => {
             color: (record: ISpoolCollapsed) =>
               record.filament.multi_color_hexes
                 ? {
-                    colors: record.filament.multi_color_hexes.split(","),
-                    vertical: record.filament.multi_color_direction === "longitudinal",
-                  }
+                  colors: record.filament.multi_color_hexes.split(","),
+                  vertical: record.filament.multi_color_direction === "longitudinal",
+                }
                 : record.filament.color_hex,
             dataId: "filament.combined_name",
             filterValueQuery: useSpoolmanFilamentFilter(),
