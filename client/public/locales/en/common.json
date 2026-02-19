@@ -417,7 +417,21 @@
         },
         "buttons": {
             "calculateMatrix": "Calculate Purge Matrix",
+            "viewMatrix": "View Purge Matrix",
             "registerPurge": "Register Purge"
+        },
+        "matrix": {
+            "title": "Purge Matrix",
+            "legend": "Purge volume (mm³) required when switching from one filament to another.",
+            "fromTo": "From → To",
+            "lowVolume": "Low volume",
+            "highVolume": "High volume",
+            "missing": "Not calibrated",
+            "add": "+ Register",
+            "missingTooltip": "No purge calibration for this pair. Click to register one.",
+            "missingAlert": "{{count}} purge calibrations are missing. Click the highlighted pairs to register them.",
+            "andMore": "... and {{count}} more",
+            "complete": "✅ All pairs have a registered purge calibration."
         },
         "form": {
             "click_or_drag_image": "Click or drag image to this area to upload",
@@ -450,6 +464,11 @@
             "nozzle_sizes": {
                 "label": "Nozzle Sizes",
                 "help": "Configure the nozzle sizes that will be available in the purge forms."
+            },
+            "volume_thresholds": {
+                "help": "Set the volume thresholds that control cell colors in the Purge Matrix. Values below the low threshold appear green; above the high threshold appear red.",
+                "low_label": "Low threshold (green)",
+                "high_label": "High threshold (red)"
             }
         }
     }

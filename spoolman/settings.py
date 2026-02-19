@@ -74,3 +74,6 @@ register_setting("locations", SettingType.ARRAY, json.dumps([]))
 register_setting("locations_spoolorders", SettingType.OBJECT, json.dumps({}))
 
 register_setting("purge_nozzle_sizes", SettingType.ARRAY, json.dumps([0.4, 0.2]))
+register_setting("purge_volume_low", SettingType.NUMBER, json.dumps(50.0))
+register_setting("purge_volume_high", SettingType.NUMBER, json.dumps(500.0))
+

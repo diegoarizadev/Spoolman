@@ -430,7 +430,21 @@
         },
         "buttons": {
             "calculateMatrix": "Calcular Matriz de Purga",
+            "viewMatrix": "Ver Matriz de Purga",
             "registerPurge": "Registrar Purga"
+        },
+        "matrix": {
+            "title": "Matriz de Purga",
+            "legend": "Volumen de purga (mm³) necesario para cambiar de un filamento a otro.",
+            "fromTo": "Origen → Destino",
+            "lowVolume": "Volumen bajo",
+            "highVolume": "Volumen alto",
+            "missing": "Sin calibración",
+            "add": "+ Registrar",
+            "missingTooltip": "No hay calibración de purga para este par. Haz clic para registrarla.",
+            "missingAlert": "Faltan {{count}} calibraciones de purga. Haz clic en los pares resaltados para registrarlas.",
+            "andMore": "... y {{count}} más",
+            "complete": "✅ Todos los pares tienen calibración de purga registrada."
         },
         "form": {
             "click_or_drag_image": "Haga clic o arrastre la imagen a esta área para subirla",
@@ -463,6 +477,11 @@
             "nozzle_sizes": {
                 "label": "Boquillas",
                 "help": "Configura los tamaños de boquilla que se mostrarán en los formularios de purga."
+            },
+            "volume_thresholds": {
+                "help": "Define los umbrales de volumen que determinan el color de las celdas en la Matriz de Purga. Valores por debajo del umbral bajo se muestran en verde; por encima del alto, en rojo.",
+                "low_label": "Umbral bajo (verde)",
+                "high_label": "Umbral alto (rojo)"
             }
         }
     }

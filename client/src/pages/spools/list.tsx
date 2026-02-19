@@ -40,6 +40,7 @@ import { TableState, useInitialTableState, useSavedState, useStoreInitialState }
 import { useCurrencyFormatter } from "../../utils/settings";
 import { setSpoolArchived, useSpoolAdjustModal } from "./functions";
 import { ISpool } from "./model";
+import PurgeMatrixModal from "../../components/purgeMatrixModal";
 
 dayjs.extend(utc);
 
@@ -105,6 +106,10 @@ export const SpoolList = () => {
   const extraFields = useGetFields(EntityType.spool);
   const currencyFormatter = useCurrencyFormatter();
   const { openSpoolAdjustModal, spoolAdjustModal } = useSpoolAdjustModal();
+  const [matrixModalOpen, setMatrixModalOpen] = useState<boolean>(false);
+  const [matrixFilaments, setMatrixFilaments] = useState<{
+    id: number; name: string; color_hex?: string; multi_color_hexes?: string;
+  }[]>([]);
 
   const allColumnsWithExtraFields = [...allColumns, ...(extraFields.data?.map((field) => "extra." + field.key) ?? [])];
 
@@ -303,18 +308,30 @@ export const SpoolList = () => {
             icon={<ToolOutlined />}
             disabled={selectedRowKeys.length === 0}
             onClick={() => {
-              // Get the selected filaments
               const selectedSpools = dataSource.filter((s) => selectedRowKeys.includes(s.id));
-              const filamentIds = [...new Set(selectedSpools.map((s) => s.filament.id))];
-              if (filamentIds.length < 2) {
+              // Deduplicate by filament ID
+              const seen = new Set<number>();
+              const filaments = selectedSpools
+                .filter((s) => {
+                  if (seen.has(s.filament.id)) return false;
+                  seen.add(s.filament.id);
+                  return true;
+                })
+                .map((s) => ({
+                  id: s.filament.id,
+                  name: s["filament.combined_name"],
+                  color_hex: s.filament.color_hex,
+                  multi_color_hexes: s.filament.multi_color_hexes,
+                }));
+              if (filaments.length < 2) {
                 message.warning(t("purge.messages.selectTwoFilaments"));
                 return;
               }
-              // Navigate to the create page with selected filaments
-              navigate(`/purge/create?from=${filamentIds[0]}&to=${filamentIds[1]}`);
+              setMatrixFilaments(filaments);
+              setMatrixModalOpen(true);
             }}
           >
-            {t("purge.buttons.calculateMatrix")}
+            {t("purge.buttons.viewMatrix")}
           </Button>
           <Dropdown
             trigger={["click"]}
@@ -353,6 +370,11 @@ export const SpoolList = () => {
       )}
     >
       {spoolAdjustModal}
+      <PurgeMatrixModal
+        open={matrixModalOpen}
+        filaments={matrixFilaments}
+        onClose={() => setMatrixModalOpen(false)}
+      />
       <Table
         {...tableProps}
         rowSelection={{
