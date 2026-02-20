@@ -15,6 +15,7 @@ const CameraCaptureModal = ({ open, onCapture, onCancel }: CameraCaptureModalPro
     const t = useTranslate();
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const guideRef = useRef<HTMLDivElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const [state, setState] = useState<CameraState>("idle");
     const [capturedDataUrl, setCapturedDataUrl] = useState<string | null>(null);
@@ -35,7 +36,9 @@ const CameraCaptureModal = ({ open, onCapture, onCancel }: CameraCaptureModalPro
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: facing },
+                video: {
+                    facingMode: facing
+                },
                 audio: false,
             });
             streamRef.current = stream;
@@ -78,14 +81,31 @@ const CameraCaptureModal = ({ open, onCapture, onCancel }: CameraCaptureModalPro
     }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleCapture = () => {
-        if (!videoRef.current || !canvasRef.current) return;
+        if (!videoRef.current || !canvasRef.current || !guideRef.current) return;
         const video = videoRef.current;
         const canvas = canvasRef.current;
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        const guide = guideRef.current;
+
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+        const cw = video.clientWidth;
+        const ch = video.clientHeight;
+
+        const scale = Math.max(cw / vw, ch / vh);
+
+        const rw = guide.clientWidth;
+        const rh = guide.clientHeight;
+
+        const cropW = rw / scale;
+        const cropH = rh / scale;
+        const cropX = (vw - cropW) / 2;
+        const cropY = (vh - cropH) / 2;
+
+        canvas.width = cropW;
+        canvas.height = cropH;
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
         const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
         setCapturedDataUrl(dataUrl);
         setState("captured");
@@ -151,18 +171,20 @@ const CameraCaptureModal = ({ open, onCapture, onCancel }: CameraCaptureModalPro
                         background: "#1a1a1a",
                         borderRadius: 8,
                         overflow: "hidden",
-                        minHeight: 280,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
+                        width: "100%",
+                        aspectRatio: "3 / 4",
+                        minHeight: 400
                     }}>
                         <video
                             ref={videoRef}
-                            style={{ width: "100%", display: "block", maxHeight: 360, objectFit: "cover" }}
+                            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
                             playsInline
                             muted
                         />
-                        {/* Framing guide overlay: always visible, vertical rectangle ~6:11 ratio */}
+                        {/* Framing guide overlay: always visible */}
                         <div
                             style={{
                                 position: "absolute",
@@ -173,44 +195,19 @@ const CameraCaptureModal = ({ open, onCapture, onCancel }: CameraCaptureModalPro
                                 pointerEvents: "none",
                             }}
                         >
-                            {/* Dark overlay with cutout effect */}
-                            <div style={{
-                                position: "absolute",
-                                inset: 0,
-                                background: "rgba(0,0,0,0.45)",
-                                maskImage: "radial-gradient(ellipse 38% 66% at 50% 50%, transparent 100%, black 100%)",
-                                WebkitMaskImage: "radial-gradient(ellipse 38% 66% at 50% 50%, transparent 100%, black 100%)",
-                            }} />
-                            {/* Corner brackets SVG - same style as QR scanner */}
-                            <svg
-                                viewBox="0 0 120 220"
-                                style={{ width: "38%", maxWidth: 140, opacity: 0.95 }}
-                                xmlns="http://www.w3.org/2000/svg"
-                            >
-                                {["top-left", "top-right", "bottom-left", "bottom-right"].map((corner) => {
-                                    const isRight = corner.includes("right");
-                                    const isBottom = corner.includes("bottom");
-                                    const x = isRight ? 120 : 0;
-                                    const y = isBottom ? 220 : 0;
-                                    const sx = isRight ? -1 : 1;
-                                    const sy = isBottom ? -1 : 1;
-                                    return (
-                                        <g key={corner} transform={`translate(${x}, ${y}) scale(${sx}, ${sy})`}>
-                                            <line x1="0" y1="0" x2="28" y2="0" stroke="#ff4d4f" strokeWidth="4" strokeLinecap="round" />
-                                            <line x1="0" y1="0" x2="0" y2="28" stroke="#ff4d4f" strokeWidth="4" strokeLinecap="round" />
-                                        </g>
-                                    );
-                                })}
-                                {/* Dashed border */}
-                                <rect
-                                    x="2" y="2" width="116" height="216"
-                                    fill="none"
-                                    stroke="#ff4d4f"
-                                    strokeWidth="1.5"
-                                    strokeDasharray="6 4"
-                                    opacity="0.7"
-                                />
-                            </svg>
+                            {/* Red crop box guiding overlay */}
+                            <div
+                                ref={guideRef}
+                                style={{
+                                    height: "80%",
+                                    aspectRatio: "1 / 2.2",
+                                    maxWidth: "90%",
+                                    boxShadow: "0 0 0 9999px rgba(0,0,0,0.6)",
+                                    border: "2px dashed #ff4d4f",
+                                    borderRadius: 8,
+                                    position: "relative"
+                                }}
+                            />
                         </div>
                         {/* Flip camera button */}
                         {state === "streaming" && (
@@ -228,11 +225,11 @@ const CameraCaptureModal = ({ open, onCapture, onCancel }: CameraCaptureModalPro
 
                 {/* Captured image preview */}
                 {state === "captured" && capturedDataUrl && (
-                    <div style={{ borderRadius: 8, overflow: "hidden" }}>
+                    <div style={{ borderRadius: 8, overflow: "hidden", background: "#1a1a1a", display: "flex", justifyContent: "center", width: "100%", aspectRatio: "3 / 4", minHeight: 400 }}>
                         <img
                             src={capturedDataUrl}
                             alt="Captured"
-                            style={{ width: "100%", display: "block", maxHeight: 360, objectFit: "cover" }}
+                            style={{ width: "100%", height: "100%", display: "block", objectFit: "contain" }}
                         />
                     </div>
                 )}
