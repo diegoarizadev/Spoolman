@@ -457,7 +457,8 @@
             "duplicateWarning": "A purge calibration already exists for this filament pair. If you confirm, the current values (volume, factor, temperature and image) will be replaced. Do you want to update the existing configuration?",
             "duplicateTitle": "⚠️ Configuration already exists",
             "duplicateOk": "Yes, update",
-            "duplicateCancel": "No, cancel"
+            "duplicateCancel": "No, cancel",
+            "maxFilamentsExceeded": "Selected too many unique filaments ({{count}}). The configured limit is {{max}}."
         },
         "settings": {
             "tab": "Purge Cal.",
@@ -466,9 +467,12 @@
                 "help": "Configure the nozzle sizes that will be available in the purge forms."
             },
             "volume_thresholds": {
-                "help": "Set the volume thresholds that control cell colors in the Purge Matrix. Values below the low threshold appear green; above the high threshold appear red.",
-                "low_label": "Low threshold (green)",
-                "high_label": "High threshold (red)"
+                "help": "Set volume thresholds for the matrix color gradient. Values below 'Low' will be green, and above 'High' will be red.",
+                "low_label": "Low Volume",
+                "high_label": "High Volume"
+            },
+            "matrix": {
+                "max_filaments": "Max Matrix Filaments"
             }
         }
     }

@@ -4,7 +4,7 @@ import { VitePWA } from "vite-plugin-pwa";
 import svgr from "vite-plugin-svgr";
 
 export default defineConfig({
-  base: "",
+  base: "/",
   plugins: [
     react(),
     svgr(),
@@ -54,7 +54,11 @@ export default defineConfig({
   ],
   server: {
     proxy: {
-      "/api": "http://127.0.0.1:7912",
+      "/api": {
+        target: "http://127.0.0.1:7912",
+        changeOrigin: true,
+        ws: true,
+      },
       "/config.js": "http://127.0.0.1:7912",
     },
   },

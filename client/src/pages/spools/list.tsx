@@ -41,6 +41,7 @@ import { useCurrencyFormatter } from "../../utils/settings";
 import { setSpoolArchived, useSpoolAdjustModal } from "./functions";
 import { ISpool } from "./model";
 import PurgeMatrixModal from "../../components/purgeMatrixModal";
+import { useGetSettings } from "../../utils/querySettings";
 
 dayjs.extend(utc);
 
@@ -110,6 +111,11 @@ export const SpoolList = () => {
   const [matrixFilaments, setMatrixFilaments] = useState<{
     id: number; name: string; color_hex?: string; multi_color_hexes?: string;
   }[]>([]);
+
+  const settings = useGetSettings();
+  const maxFilaments = settings.data?.purge_matrix_max_filaments
+    ? JSON.parse(settings.data.purge_matrix_max_filaments.value)
+    : 6;
 
   const allColumnsWithExtraFields = [...allColumns, ...(extraFields.data?.map((field) => "extra." + field.key) ?? [])];
 
@@ -323,10 +329,17 @@ export const SpoolList = () => {
                   color_hex: s.filament.color_hex,
                   multi_color_hexes: s.filament.multi_color_hexes,
                 }));
+
               if (filaments.length < 2) {
                 message.warning(t("purge.messages.selectTwoFilaments"));
                 return;
               }
+
+              if (filaments.length > maxFilaments) {
+                message.error(t("purge.messages.maxFilamentsExceeded", { count: filaments.length, max: maxFilaments }));
+                return;
+              }
+
               setMatrixFilaments(filaments);
               setMatrixModalOpen(true);
             }}

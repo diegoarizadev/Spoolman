@@ -64,32 +64,38 @@ function subscribeSingle(
   // Verify that WebSockets are supported
   if (!("WebSocket" in window)) {
     console.warn("WebSockets are not supported in this browser. Live updates will not be available.");
-    return () => {};
+    return () => { };
   }
 
   const websocketURL = id ? toWebsocketURL(`${apiUrl}/${resource}/${id}`) : toWebsocketURL(`${apiUrl}/${resource}`);
 
-  const ws = new WebSocket(websocketURL);
-  ws.onmessage = (message) => {
-    const data: Event = JSON.parse(message.data);
-    const type = data.type === "added" ? "created" : data.type;
-    const date = new Date(data.date);
+  let ws: WebSocket | null = null;
+  const connectTimeout = setTimeout(() => {
+    ws = new WebSocket(websocketURL);
+    ws.onmessage = (message) => {
+      const data: Event = JSON.parse(message.data);
+      const type = data.type === "added" ? "created" : data.type;
+      const date = new Date(data.date);
 
-    const liveEvent: LiveEvent = {
-      channel: channel,
-      type: type,
-      payload: {
-        data: data.payload,
-        ids: [data.payload.id],
-      },
-      date: date,
+      const liveEvent: LiveEvent = {
+        channel: channel,
+        type: type,
+        payload: {
+          data: data.payload,
+          ids: [data.payload.id],
+        },
+        date: date,
+      };
+
+      callback(liveEvent);
     };
-
-    callback(liveEvent);
-  };
+  }, 100);
 
   return () => {
-    ws.close();
+    clearTimeout(connectTimeout);
+    if (ws) {
+      ws.close();
+    }
   };
 }
 

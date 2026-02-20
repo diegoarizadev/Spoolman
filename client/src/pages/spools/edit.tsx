@@ -429,7 +429,7 @@ export const SpoolEdit = () => {
           ]}
         >
           <Select
-            dropdownRender={(menu) => (
+            popupRender={(menu) => (
               <>
                 {menu}
                 <Divider style={{ margin: "8px 0" }} />

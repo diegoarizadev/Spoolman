@@ -39,7 +39,7 @@ async function fetchPurgePair(fromId: number, toId: number): Promise<IPurgeCalib
 }
 
 /** Renders a colored swatch for a filament */
-function FilamentBadge({ filament }: { filament: FilamentInfo }) {
+function FilamentBadge({ filament, maxWidth = 120 }: { filament: FilamentInfo; maxWidth?: number }) {
     const color = filament.multi_color_hexes
         ? filament.multi_color_hexes.split(",")[0]
         : filament.color_hex;
@@ -59,7 +59,7 @@ function FilamentBadge({ filament }: { filament: FilamentInfo }) {
             )}
             <Text
                 ellipsis={{ tooltip: filament.name }}
-                style={{ fontSize: 12, maxWidth: 120 }}
+                style={{ fontSize: 12, maxWidth }}
             >
                 {filament.name}
             </Text>
@@ -159,10 +159,10 @@ export function PurgeMatrixModal({ open, filaments, onClose }: PurgeMatrixModalP
             dataIndex: "from",
             key: "from",
             fixed: "left" as const,
-            width: 160,
+            width: 220,
             render: (f: FilamentInfo) => (
                 <div style={{ padding: "4px 0" }}>
-                    <FilamentBadge filament={f} />
+                    <FilamentBadge filament={f} maxWidth={200} />
                 </div>
             ),
         },

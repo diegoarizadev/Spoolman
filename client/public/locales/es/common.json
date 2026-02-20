@@ -470,7 +470,8 @@
             "duplicateWarning": "Ya existe una calibración de purga para este par de filamentos. Si confirmas, los valores actuales (volumen, factor, temperatura e imagen) serán reemplazados. ¿Deseas actualizar la configuración existente?",
             "duplicateTitle": "⚠️ Configuración ya existente",
             "duplicateOk": "Sí, actualizar",
-            "duplicateCancel": "No, cancelar"
+            "duplicateCancel": "No, cancelar",
+            "maxFilamentsExceeded": "Has seleccionado demasiados filamentos únicos ({{count}}). El límite configurado es {{max}}."
         },
         "settings": {
             "tab": "Cali. Purga",
@@ -479,9 +480,12 @@
                 "help": "Configura los tamaños de boquilla que se mostrarán en los formularios de purga."
             },
             "volume_thresholds": {
-                "help": "Define los umbrales de volumen que determinan el color de las celdas en la Matriz de Purga. Valores por debajo del umbral bajo se muestran en verde; por encima del alto, en rojo.",
-                "low_label": "Umbral bajo (verde)",
-                "high_label": "Umbral alto (rojo)"
+                "help": "Establece los umbrales de volumen para el gradiente de colores en la matriz. Los valores menores al 'Bajo' serán verdes, y los mayores al 'Alto' serán rojos.",
+                "low_label": "Volumen Bajo",
+                "high_label": "Volumen Alto"
+            },
+            "matrix": {
+                "max_filaments": "Máx. Filamentos en Matriz"
             }
         }
     }

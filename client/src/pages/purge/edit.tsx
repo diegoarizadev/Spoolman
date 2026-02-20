@@ -1,16 +1,19 @@
 import { UploadOutlined, CameraOutlined, DeleteOutlined, ZoomInOutlined } from "@ant-design/icons";
 import { Edit, useForm, useSelect } from "@refinedev/antd";
 import { HttpError, useTranslate } from "@refinedev/core";
-import { Button, Col, Form, Input, InputNumber, Modal, Row, Select, Space, Tag, Typography, Upload, message } from "antd";
+import { Button, Col, Form, Input, InputNumber, Row, Select, Space, Tag, Typography, Upload, App, Modal } from "antd";
 import { useEffect, useState, useMemo } from "react";
 import { useGetSettings } from "../../utils/querySettings";
 import { axiosInstance } from "@refinedev/simple-rest";
 import { getAPIURL } from "../../utils/url";
 import { IPurgeCalibration } from "./model";
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import CameraCaptureModal from "../../components/cameraCaptureModal";
+import { FilamentSelect } from "../../components/filamentSelect";
 
 export const PurgeEdit = () => {
+    const navigate = useNavigate();
+    const { message, modal } = App.useApp();
     const t = useTranslate();
     const { id: purgeId } = useParams();
     const [fileList, setFileList] = useState<any[]>([]);
@@ -58,18 +61,34 @@ export const PurgeEdit = () => {
         }
     }, [formProps.initialValues, form]);
 
-    const { selectProps: filamentSelectProps } = useSelect({
-        resource: "filament",
-        optionLabel: (item) => (item.vendor ? `${item.vendor.name} - ${item.name}` : item.name || item.id?.toString() || ""),
-        pagination: { mode: "off" },
-    });
+    const deleteImage = () => {
+        modal.confirm({
+            title: t("purge.form.delete_image_confirm_title"),
+            content: t("purge.form.delete_image_confirm_content"),
+            okText: t("buttons.delete"),
+            okType: "danger",
+            onOk: async () => {
+                try {
+                    await axiosInstance.delete(`${getAPIURL()}/purge/${purgeId}/image`);
+                    message.success(t("notifications.deleteSuccess"));
+                    setCapturedPreview(null);
+                    setFileList([]);
+                    // Optionally, refresh form data to reflect image removal
+                    form.setFieldsValue({ image_path: null });
+                } catch (error) {
+                    console.error("Failed to delete image:", error);
+                    message.error(t("notifications.deleteError"));
+                }
+            },
+        });
+    };
 
     const handleFinish = async (values: any) => {
         try {
-            const { from_filament, to_filament, ...updateValues } = values;
+            const { from_filament: _f, to_filament: _t, ...updateValues } = values;
             await onFinish(updateValues);
 
-            if (purgeId && fileList.length > 0) {
+            if (fileList.length > 0) {
                 const formData = new FormData();
                 const fileObj = fileList[0].originFileObj || fileList[0];
                 formData.append("file", fileObj);
@@ -84,21 +103,35 @@ export const PurgeEdit = () => {
             } else {
                 message.success(t("notifications.saveSuccessful"));
             }
+            navigate("/purge");
         } catch (error: any) {
-            console.error("Update error details:", error);
-            const status = error?.response?.status ?? error?.status ?? error?.statusCode ?? "???";
-            let detail = error?.response?.data?.detail ?? error?.message ?? "Error desconocido";
+            console.error("Edit submission error:", error);
+            const status = error?.response?.status ?? error?.status ?? error?.statusCode;
+            const detail = error?.response?.data?.detail ?? error?.message;
 
-            if (typeof detail === "object") {
-                detail = JSON.stringify(detail);
+            if (status === 409 && typeof detail === "string" && detail.startsWith("AlreadyExists:")) {
+                modal.confirm({
+                    title: t("purge.messages.duplicateTitle"),
+                    content: t("purge.messages.duplicateWarning"),
+                    okText: t("purge.messages.duplicateOk"),
+                    onOk: () => {
+                        // Optionally, navigate or perform other actions if user confirms
+                    },
+                });
+            } else {
+                let errorMessage = "Error desconocido";
+                if (typeof detail === "object") {
+                    errorMessage = JSON.stringify(detail);
+                } else if (detail) {
+                    errorMessage = detail;
+                }
+                message.error(
+                    t("notifications.editError", {
+                        resource: t("purge.titles.list"),
+                        statusCode: `${status}: ${errorMessage}`
+                    })
+                );
             }
-
-            message.error(
-                t("notifications.editError", {
-                    resource: t("purge.titles.list"),
-                    statusCode: `${status}: ${detail}`
-                })
-            );
         }
     };
 
@@ -117,32 +150,28 @@ export const PurgeEdit = () => {
                             name="from_filament_id"
                             rules={[{ required: true }]}
                         >
-                            <Select {...filamentSelectProps} showSearch filterOption={(input, option) =>
-                                (option?.label as string ?? "").toLowerCase().includes(input.toLowerCase())
-                            } />
+                            <FilamentSelect placeholder={t("purge.fields.from_filament")} />
                         </Form.Item>
                         <Form.Item
                             label={t("purge.fields.to_filament")}
                             name="to_filament_id"
                             rules={[{ required: true }]}
                         >
-                            <Select {...filamentSelectProps} showSearch filterOption={(input, option) =>
-                                (option?.label as string ?? "").toLowerCase().includes(input.toLowerCase())
-                            } />
+                            <FilamentSelect placeholder={t("purge.fields.to_filament")} />
                         </Form.Item>
                         <Form.Item
-                            label={t("purge.fields.purge_volume")}
+                            label={`${t("purge.fields.purge_volume")} (mm³)`}
                             name="purge_volume"
                             rules={[{ required: true }]}
                         >
-                            <InputNumber style={{ width: "100%" }} addonAfter="mm³" precision={1} min={0} max={2000} />
+                            <InputNumber style={{ width: "100%" }} precision={1} min={0} max={2000} />
                         </Form.Item>
                         <Form.Item
-                            label={t("purge.fields.multiplication_factor")}
+                            label={`${t("purge.fields.multiplication_factor")} (x)`}
                             name="multiplication_factor"
                             initialValue={1.0}
                         >
-                            <InputNumber style={{ width: "100%" }} addonAfter="x" precision={2} min={0} max={100} />
+                            <InputNumber style={{ width: "100%" }} precision={2} min={0} max={100} />
                         </Form.Item>
                         <Form.Item
                             label={t("purge.fields.nozzle_size")}
@@ -158,11 +187,11 @@ export const PurgeEdit = () => {
                             </Select>
                         </Form.Item>
                         <Form.Item
-                            label={t("purge.fields.print_temp")}
+                            label={`${t("purge.fields.print_temp")} (°C)`}
                             name="print_temp"
                             rules={[{ required: true }]}
                         >
-                            <InputNumber style={{ width: "100%" }} addonAfter="°C" precision={1} min={0} max={500} />
+                            <InputNumber style={{ width: "100%" }} precision={1} min={0} max={500} />
                         </Form.Item>
                         <Form.Item label={t("purge.fields.comment")} name="comment">
                             <Input.TextArea maxLength={1024} />

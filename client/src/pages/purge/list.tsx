@@ -1,7 +1,7 @@
-import { DeleteOutlined, EditOutlined, EyeOutlined, FilterOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, ExperimentOutlined, EyeOutlined, FilterOutlined } from "@ant-design/icons";
 import { CreateButton, List, useTable } from "@refinedev/antd";
 import { HttpError, useDelete, useInvalidate, useNavigation, useTranslate } from "@refinedev/core";
-import { Button, Popconfirm, Table } from "antd";
+import { Button, Popconfirm, Table, message } from "antd";
 import dayjs from "dayjs";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
@@ -20,8 +20,10 @@ import { useLiveify } from "../../components/liveify";
 import { useSpoolmanFilamentFilter } from "../../components/otherModels";
 import { removeUndefined } from "../../utils/filtering";
 import { TableState, useInitialTableState, useStoreInitialState } from "../../utils/saveload";
+import { useGetSettings } from "../../utils/querySettings";
 import { getAPIURL } from "../../utils/url";
 import { IPurgeCalibration } from "./model";
+import { PurgeMatrixModal } from "../../components/purgeMatrixModal";
 
 interface IPurgeCollapsed extends IPurgeCalibration {
     "from_filament.combined_name": string;
@@ -112,6 +114,59 @@ export const PurgeList = () => {
     );
     const dataSource = useLiveify("purge", queryDataSource, collapsePurge);
 
+    // Row Selection for Matrix
+    const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+    const [selectedRows, setSelectedRows] = useState<IPurgeCollapsed[]>([]);
+    const [matrixModalOpen, setMatrixModalOpen] = useState(false);
+    const [matrixFilaments, setMatrixFilaments] = useState<any[]>([]);
+
+    const rowSelection = {
+        selectedRowKeys,
+        onChange: (keys: React.Key[], rows: IPurgeCollapsed[]) => {
+            setSelectedRowKeys(keys);
+            setSelectedRows(rows);
+        },
+        preserveSelectedRowKeys: true,
+    };
+
+    const settings = useGetSettings();
+    const maxFilaments = settings.data?.purge_matrix_max_filaments
+        ? JSON.parse(settings.data.purge_matrix_max_filaments.value)
+        : 6;
+
+    const handleViewMatrix = () => {
+        const filamentsMap = new Map<number, any>();
+
+        selectedRows.forEach((row) => {
+            if (row.from_filament) {
+                filamentsMap.set(row.from_filament.id, row.from_filament);
+            }
+            if (row.to_filament) {
+                filamentsMap.set(row.to_filament.id, row.to_filament);
+            }
+        });
+
+        const filaments = Array.from(filamentsMap.values()).map((f) => ({
+            id: f.id,
+            name: f.name ? `${f.vendor?.name ? f.vendor.name + " - " : ""}${f.name}` : `ID: ${f.id}`,
+            color_hex: f.color_hex,
+            multi_color_hexes: f.multi_color_hexes,
+        }));
+
+        if (filaments.length < 2) {
+            message.warning(t("purge.messages.selectTwoFilaments"));
+            return;
+        }
+
+        if (filaments.length > maxFilaments) {
+            message.error(t("purge.messages.maxFilamentsExceeded", { count: filaments.length, max: maxFilaments }));
+            return;
+        }
+
+        setMatrixFilaments(filaments);
+        setMatrixModalOpen(true);
+    };
+
     const { mutate: mutateDelete } = useDelete();
     const actions = (record: IPurgeCollapsed) => [
         { name: t("buttons.show"), icon: <EyeOutlined />, link: showUrl("purge", record.id) },
@@ -160,6 +215,14 @@ export const PurgeList = () => {
                 <>
                     <Button
                         type="primary"
+                        icon={<ExperimentOutlined />}
+                        onClick={handleViewMatrix}
+                        disabled={selectedRowKeys.length < 1}
+                    >
+                        {t("purge.buttons.viewMatrix")}
+                    </Button>
+                    <Button
+                        type="primary"
                         icon={<FilterOutlined />}
                         onClick={() => {
                             setFilters([], "replace");
@@ -175,6 +238,7 @@ export const PurgeList = () => {
         >
             <Table<IPurgeCollapsed>
                 {...(tableProps as any)}
+                rowSelection={rowSelection}
                 sticky
                 tableLayout="auto"
                 scroll={{ x: "max-content" }}
@@ -294,6 +358,11 @@ export const PurgeList = () => {
                         },
                     ]),
                 ])}
+            />
+            <PurgeMatrixModal
+                open={matrixModalOpen}
+                filaments={matrixFilaments}
+                onClose={() => setMatrixModalOpen(false)}
             />
         </List>
     );

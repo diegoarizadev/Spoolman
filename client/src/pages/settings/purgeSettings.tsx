@@ -9,6 +9,7 @@ export function PurgeSettings() {
     const setNozzleSizes = useSetSetting("purge_nozzle_sizes");
     const setVolumeLow = useSetSetting("purge_volume_low");
     const setVolumeHigh = useSetSetting("purge_volume_high");
+    const setMatrixMax = useSetSetting("purge_matrix_max_filaments");
 
     const [nozzleForm] = Form.useForm();
     const [thresholdForm] = Form.useForm();
@@ -27,22 +28,29 @@ export function PurgeSettings() {
         }
     }, [settings.data, nozzleForm]);
 
-    // Set initial form values for volume thresholds
+    // Set initial form values for volume thresholds and matrix limit
     useEffect(() => {
         if (settings.data?.purge_volume_low && settings.data?.purge_volume_high) {
+            const low = JSON.parse(settings.data.purge_volume_low.value);
+            const high = JSON.parse(settings.data.purge_volume_high.value);
+            const maxFilaments = settings.data.purge_matrix_max_filaments
+                ? JSON.parse(settings.data.purge_matrix_max_filaments.value)
+                : 6;
+
             thresholdForm.setFieldsValue({
-                volume_low: JSON.parse(settings.data.purge_volume_low.value),
-                volume_high: JSON.parse(settings.data.purge_volume_high.value),
+                volume_low: low,
+                volume_high: high,
+                matrix_max_filaments: maxFilaments,
             });
         }
     }, [settings.data, thresholdForm]);
 
     // Success messages
     useEffect(() => {
-        if (setNozzleSizes.isSuccess || setVolumeLow.isSuccess || setVolumeHigh.isSuccess) {
+        if (setNozzleSizes.isSuccess || setVolumeLow.isSuccess || setVolumeHigh.isSuccess || setMatrixMax.isSuccess) {
             messageApi.success(t("notifications.saveSuccessful"));
         }
-    }, [setNozzleSizes.isSuccess, setVolumeLow.isSuccess, setVolumeHigh.isSuccess, messageApi, t]);
+    }, [setNozzleSizes.isSuccess, setVolumeLow.isSuccess, setVolumeHigh.isSuccess, setMatrixMax.isSuccess, messageApi, t]);
 
     const onNozzleFinish = (values: { nozzle_sizes: number[] }) => {
         const cleanSizes = values.nozzle_sizes
@@ -53,18 +61,22 @@ export function PurgeSettings() {
         }
     };
 
-    const onThresholdFinish = (values: { volume_low: number; volume_high: number }) => {
+    const onThresholdFinish = (values: { volume_low: number; volume_high: number; matrix_max_filaments: number }) => {
         const currentLow = JSON.parse(settings.data?.purge_volume_low?.value ?? "50");
         const currentHigh = JSON.parse(settings.data?.purge_volume_high?.value ?? "500");
+        const currentMax = JSON.parse(settings.data?.purge_matrix_max_filaments?.value ?? "6");
+
         if (values.volume_low !== currentLow) setVolumeLow.mutate(values.volume_low);
         if (values.volume_high !== currentHigh) setVolumeHigh.mutate(values.volume_high);
+        if (values.matrix_max_filaments !== currentMax) setMatrixMax.mutate(values.matrix_max_filaments);
     };
 
     const isSaving =
         settings.isFetching ||
         setNozzleSizes.isPending ||
         setVolumeLow.isPending ||
-        setVolumeHigh.isPending;
+        setVolumeHigh.isPending ||
+        setMatrixMax.isPending;
 
     return (
         <>
@@ -91,7 +103,7 @@ export function PurgeSettings() {
                                                 min={0.1}
                                                 max={2.0}
                                                 style={{ width: "200px" }}
-                                                addonAfter="mm"
+                                                suffix="mm"
                                             />
                                         </Form.Item>
                                         <MinusCircleOutlined onClick={() => remove(name)} />
@@ -130,7 +142,7 @@ export function PurgeSettings() {
                                 max={9999}
                                 step={10}
                                 style={{ width: 160 }}
-                                addonAfter="mm³"
+                                suffix="mm³"
                             />
                         </Form.Item>
                         <Form.Item
@@ -143,7 +155,19 @@ export function PurgeSettings() {
                                 max={9999}
                                 step={50}
                                 style={{ width: 160 }}
-                                addonAfter="mm³"
+                                suffix="mm³"
+                            />
+                        </Form.Item>
+                        <Form.Item
+                            name="matrix_max_filaments"
+                            label={t("purge.settings.matrix.max_filaments")}
+                            rules={[{ required: true }]}
+                        >
+                            <InputNumber
+                                min={2}
+                                max={20}
+                                step={1}
+                                style={{ width: 160 }}
                             />
                         </Form.Item>
                     </Space>

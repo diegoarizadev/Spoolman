@@ -1,7 +1,7 @@
 import { Create, useForm, useSelect } from "@refinedev/antd";
 import { HttpError, useTranslate } from "@refinedev/core";
 import { axiosInstance } from "@refinedev/simple-rest";
-import { Form, Input, InputNumber, Select, Upload, message, Modal, Button, Space } from "antd";
+import { Form, Input, InputNumber, Select, Upload, Button, Space, App } from "antd";
 import { InboxOutlined, CameraOutlined, DeleteOutlined } from "@ant-design/icons";
 import { IFilament } from "../filaments/model";
 import { IPurgeCalibration } from "./model";
@@ -10,10 +10,12 @@ import { useNavigate, useSearchParams } from "react-router";
 import { useEffect, useState, useMemo } from "react";
 import { useGetSettings } from "../../utils/querySettings";
 import CameraCaptureModal from "../../components/cameraCaptureModal";
+import { FilamentSelect } from "../../components/filamentSelect";
 
 const { Dragger } = Upload;
 
 export const PurgeCreate = () => {
+    const { message, modal } = App.useApp();
     const t = useTranslate();
     const [fileList, setFileList] = useState<any[]>([]);
     const [cameraOpen, setCameraOpen] = useState(false);
@@ -47,12 +49,6 @@ export const PurgeCreate = () => {
             });
         }
     }, [fromParam, toParam, formProps.form]);
-
-    const { selectProps: filamentSelectProps } = useSelect<IFilament>({
-        resource: "filament",
-        optionLabel: (item: IFilament) => (item.vendor ? `${item.vendor.name} - ${item.name}` : item.name || item.id.toString()),
-        pagination: { mode: "off" },
-    });
 
     const navigate = useNavigate();
 
@@ -88,7 +84,7 @@ export const PurgeCreate = () => {
             if (status === 409 && typeof detail === "string" && detail.startsWith("AlreadyExists:")) {
                 const existingId = detail.split(":")[1];
 
-                Modal.confirm({
+                modal.confirm({
                     title: t("purge.messages.duplicateTitle"),
                     content: t("purge.messages.duplicateWarning"),
                     okText: t("purge.messages.duplicateOk"),
@@ -143,8 +139,8 @@ export const PurgeCreate = () => {
                     console.log("Form values:", values);
                     handleFinish(values);
                 }}
-                onFinishFailed={(error) => {
-                    console.error("Form validation failed:", error);
+                onFinishFailed={(errorInfo) => {
+                    console.error("Form validation failed:", errorInfo.errorFields);
                     message.error("Por favor, revisa los errores en el formulario.");
                 }}
             >
@@ -153,32 +149,28 @@ export const PurgeCreate = () => {
                     name="from_filament_id"
                     rules={[{ required: true }]}
                 >
-                    <Select {...filamentSelectProps} showSearch filterOption={(input, option) =>
-                        (option?.label as string ?? "").toLowerCase().includes(input.toLowerCase())
-                    } />
+                    <FilamentSelect placeholder={t("purge.fields.from_filament")} />
                 </Form.Item>
                 <Form.Item
                     label={t("purge.fields.to_filament")}
                     name="to_filament_id"
                     rules={[{ required: true }]}
                 >
-                    <Select {...filamentSelectProps} showSearch filterOption={(input, option) =>
-                        (option?.label as string ?? "").toLowerCase().includes(input.toLowerCase())
-                    } />
+                    <FilamentSelect placeholder={t("purge.fields.to_filament")} />
                 </Form.Item>
                 <Form.Item
-                    label={t("purge.fields.purge_volume")}
+                    label={`${t("purge.fields.purge_volume")} (mm³)`}
                     name="purge_volume"
                     rules={[{ required: true }]}
                 >
-                    <InputNumber addonAfter="mm³" precision={1} min={0} max={2000} style={{ width: "100%" }} />
+                    <InputNumber precision={1} min={0} max={2000} style={{ width: "100%" }} />
                 </Form.Item>
                 <Form.Item
-                    label={t("purge.fields.multiplication_factor")}
+                    label={`${t("purge.fields.multiplication_factor")} (x)`}
                     name="multiplication_factor"
                     initialValue={1.0}
                 >
-                    <InputNumber addonAfter="x" precision={2} min={0} max={100} style={{ width: "100%" }} />
+                    <InputNumber precision={2} min={0} max={100} style={{ width: "100%" }} />
                 </Form.Item>
                 <Form.Item
                     label={t("purge.fields.nozzle_size")}
@@ -195,11 +187,11 @@ export const PurgeCreate = () => {
                     </Select>
                 </Form.Item>
                 <Form.Item
-                    label={t("purge.fields.print_temp")}
+                    label={`${t("purge.fields.print_temp")} (°C)`}
                     name="print_temp"
                     rules={[{ required: true }]}
                 >
-                    <InputNumber addonAfter="°C" precision={1} min={0} max={500} style={{ width: "100%" }} />
+                    <InputNumber precision={1} min={0} max={500} style={{ width: "100%" }} />
                 </Form.Item>
                 <Form.Item label={t("purge.fields.image")}>
                     {capturedPreview ? (
