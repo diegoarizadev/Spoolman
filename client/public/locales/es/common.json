@@ -451,7 +451,10 @@
             "take_photo": "Tomar Foto",
             "new_image": "Nueva imagen",
             "zoom_image": "Ver imagen completa",
-            "remove_new_image": "Quitar nueva imagen"
+            "remove_new_image": "Quitar nueva imagen",
+            "crop_image": "Recortar imagen",
+            "crop_instruction": "Haz clic y arrastra sobre la foto para ajustar el área de recorte.",
+            "crop_confirm": "Confirmar recorte"
         },
         "camera": {
             "title": "Tomar una Foto",

@@ -52,10 +52,31 @@ export function useSetPrintSettings(): (spoolQRCodePrintSettings: SpoolQRCodePri
   };
 }
 
+export function useGetPurgePrintSettings(): SpoolQRCodePrintSettings[] | undefined {
+  const { data } = useGetSetting("print_presets_purge");
+  if (!data) return;
+  const parsed: SpoolQRCodePrintSettings[] =
+    data && data.value ? JSON.parse(data.value) : ([] as SpoolQRCodePrintSettings[]);
+  return parsed.map((settings) => {
+    if (!settings.labelSettings.printSettings.id) {
+      settings.labelSettings.printSettings.id = uuidv4();
+    }
+    return settings;
+  });
+}
+
+export function useSetPurgePrintSettings(): (spoolQRCodePrintSettings: SpoolQRCodePrintSettings[]) => void {
+  const mut = useSetSetting("print_presets_purge");
+
+  return (spoolQRCodePrintSettings: SpoolQRCodePrintSettings[]) => {
+    mut.mutate(spoolQRCodePrintSettings);
+  };
+}
+
 interface GenericObject {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
-  extra: { [key: string]: string };
+  extra?: { [key: string]: string };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -63,7 +84,7 @@ function getTagValue(tag: string, obj: GenericObject): any {
   // Split tag by .
   const tagParts = tag.split(".");
   if (tagParts[0] === "extra") {
-    const extraValue = obj.extra[tagParts[1]];
+    const extraValue = obj.extra?.[tagParts[1]];
     if (extraValue === undefined) {
       return "?";
     }
@@ -99,20 +120,20 @@ function applyTextFormatting(text: string): ReactElement[] {
   return elements;
 }
 
-export function renderLabelContents(template: string, spool: ISpool): ReactElement {
+export function renderLabelContents(template: string, variableObj: any): ReactElement {
   // Find all {tags} in the template string and loop over them
   const matches = [...template.matchAll(/{(?:[^}{]|{[^}{]*})*}/gs)];
   let label_text = template;
   matches.forEach((match) => {
     if ((match[0].match(/{/g) || []).length == 1) {
       const tag = match[0].replace(/[{}]/g, "");
-      const tagValue = getTagValue(tag, spool);
+      const tagValue = getTagValue(tag, variableObj);
       label_text = label_text.replace(match[0], tagValue);
     } else if ((match[0].match(/{/g) || []).length == 2) {
       const structure = match[0].match(/{(.*?){(.*?)}(.*?)}/);
       if (structure != null) {
         const tag = structure[2];
-        const tagValue = getTagValue(tag, spool);
+        const tagValue = getTagValue(tag, variableObj);
         if (tagValue == "?") {
           label_text = label_text.replace(match[0], "");
         } else {

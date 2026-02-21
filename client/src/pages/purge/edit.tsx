@@ -1,4 +1,4 @@
-import { UploadOutlined, CameraOutlined, DeleteOutlined, ZoomInOutlined } from "@ant-design/icons";
+import { UploadOutlined, CameraOutlined, DeleteOutlined, ZoomInOutlined, ScissorOutlined } from "@ant-design/icons";
 import { Edit, useForm, useSelect } from "@refinedev/antd";
 import { HttpError, useTranslate } from "@refinedev/core";
 import { Button, Col, Form, Input, InputNumber, Row, Select, Space, Tag, Typography, Upload, App, Modal } from "antd";
@@ -9,6 +9,7 @@ import { getAPIURL } from "../../utils/url";
 import { IPurgeCalibration } from "./model";
 import { useParams, useNavigate } from "react-router";
 import CameraCaptureModal from "../../components/cameraCaptureModal";
+import CropImageModal from "../../components/cropImageModal";
 import { FilamentSelect } from "../../components/filamentSelect";
 
 export const PurgeEdit = () => {
@@ -20,6 +21,7 @@ export const PurgeEdit = () => {
     const [cameraOpen, setCameraOpen] = useState(false);
     const [capturedPreview, setCapturedPreview] = useState<string | null>(null);
     const [lightboxOpen, setLightboxOpen] = useState(false);
+    const [cropModalOpen, setCropModalOpen] = useState(false);
     const settings = useGetSettings();
 
     const nozzleSizes = useMemo(() => {
@@ -40,6 +42,7 @@ export const PurgeEdit = () => {
     >({
         resource: "purge",
         action: "edit",
+        id: purgeId,
         redirect: "list",
     });
 
@@ -169,7 +172,6 @@ export const PurgeEdit = () => {
                         <Form.Item
                             label={`${t("purge.fields.multiplication_factor")} (x)`}
                             name="multiplication_factor"
-                            initialValue={1.0}
                         >
                             <InputNumber style={{ width: "100%" }} precision={2} min={0} max={100} />
                         </Form.Item>
@@ -303,6 +305,14 @@ export const PurgeEdit = () => {
                                 {t("purge.form.zoom_image") ?? "Ver imagen completa"}
                             </Button>
 
+                            <Button
+                                icon={<ScissorOutlined />}
+                                block
+                                onClick={() => setCropModalOpen(true)}
+                            >
+                                {t("purge.form.crop_image") ?? "Recortar imagen"}
+                            </Button>
+
                             {isNewImage && (
                                 <Button
                                     danger
@@ -315,7 +325,6 @@ export const PurgeEdit = () => {
                             )}
                         </div>
 
-                        {/* Lightbox modal */}
                         <Modal
                             open={lightboxOpen}
                             onCancel={() => setLightboxOpen(false)}
@@ -330,6 +339,17 @@ export const PurgeEdit = () => {
                                 style={{ maxWidth: "90vw", maxHeight: "85vh", display: "block", borderRadius: 4 }}
                             />
                         </Modal>
+
+                        <CropImageModal
+                            open={cropModalOpen}
+                            imageSrc={previewUrl}
+                            onCancel={() => setCropModalOpen(false)}
+                            onCropComplete={(file, newUrl) => {
+                                setFileList([file]);
+                                setCapturedPreview(newUrl);
+                                setCropModalOpen(false);
+                            }}
+                        />
                     </Col>
                 )}
             </Row>

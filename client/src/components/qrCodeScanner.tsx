@@ -22,11 +22,26 @@ const QRCodeScannerModal = () => {
     if (match && match.groups) {
       setVisible(false);
       navigate(`/spool/show/${match.groups.id}`);
+      return;
     }
     const fullURLmatch = result.match(/^https?:\/\/[^/]+\/spool\/show\/(?<id>[0-9]+)$/i);
     if (fullURLmatch && fullURLmatch.groups) {
       setVisible(false);
       navigate(`/spool/show/${fullURLmatch.groups.id}`);
+      return;
+    }
+
+    const purgeMatch = result.match(/^web\+spoolman:p-(?<id>[0-9]+)$/i);
+    if (purgeMatch && purgeMatch.groups) {
+      setVisible(false);
+      navigate(`/purge/show/${purgeMatch.groups.id}`);
+      return;
+    }
+    const purgeFullURLmatch = result.match(/^https?:\/\/[^/]+\/purge\/show\/(?<id>[0-9]+)$/i);
+    if (purgeFullURLmatch && purgeFullURLmatch.groups) {
+      setVisible(false);
+      navigate(`/purge/show/${purgeFullURLmatch.groups.id}`);
+      return;
     }
   };
 

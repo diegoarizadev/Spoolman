@@ -438,7 +438,10 @@
             "take_photo": "Take Photo",
             "new_image": "New image",
             "zoom_image": "View full image",
-            "remove_new_image": "Remove new image"
+            "remove_new_image": "Remove new image",
+            "crop_image": "Crop image",
+            "crop_instruction": "Click and drag over the image to adjust the crop area.",
+            "crop_confirm": "Confirm crop"
         },
         "camera": {
             "title": "Take a Photo",

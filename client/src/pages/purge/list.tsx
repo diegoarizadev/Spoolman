@@ -1,4 +1,4 @@
-import { DeleteOutlined, EditOutlined, ExperimentOutlined, EyeOutlined, FilterOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, ExperimentOutlined, EyeOutlined, FilterOutlined, PrinterOutlined } from "@ant-design/icons";
 import { CreateButton, List, useTable } from "@refinedev/antd";
 import { HttpError, useDelete, useInvalidate, useNavigation, useTranslate } from "@refinedev/core";
 import { Button, Popconfirm, Table, message } from "antd";
@@ -169,6 +169,7 @@ export const PurgeList = () => {
 
     const { mutate: mutateDelete } = useDelete();
     const actions = (record: IPurgeCollapsed) => [
+        { name: t("printing.qrcode.button"), icon: <PrinterOutlined />, onClick: () => navigate(`print?purges=${record.id}`) },
         { name: t("buttons.show"), icon: <EyeOutlined />, link: showUrl("purge", record.id) },
         { name: t("buttons.edit"), icon: <EditOutlined />, link: editUrl("purge", record.id) },
         {
@@ -213,6 +214,21 @@ export const PurgeList = () => {
         <List
             headerButtons={() => (
                 <>
+                    <Button
+                        type="primary"
+                        icon={<PrinterOutlined />}
+                        onClick={() => {
+                            if (selectedRowKeys.length === 0) {
+                                navigate("print");
+                            } else {
+                                const urlParams = new URLSearchParams();
+                                selectedRowKeys.forEach((key) => urlParams.append("purges", key.toString()));
+                                navigate(`print?${urlParams.toString()}`);
+                            }
+                        }}
+                    >
+                        {t("printing.qrcode.button")}
+                    </Button>
                     <Button
                         type="primary"
                         icon={<ExperimentOutlined />}
@@ -330,6 +346,7 @@ export const PurgeList = () => {
                         width: 150,
                     }),
                     ActionsColumn(t("table.actions"), (record) => [
+                        { name: t("printing.qrcode.button"), icon: <PrinterOutlined />, onClick: () => navigate(`print?purges=${record.id}`) },
                         { name: t("buttons.show"), icon: <EyeOutlined />, link: showUrl("purge", record.id) },
                         { name: t("buttons.edit"), icon: <EditOutlined />, link: editUrl("purge", record.id) },
                         {

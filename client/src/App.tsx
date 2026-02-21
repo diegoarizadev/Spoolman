@@ -244,6 +244,7 @@ function App() {
                       />
                       <Route path="edit/:id" element={<LoadableResourcePage resource="purge" page="edit" />} />
                       <Route path="show/:id" element={<LoadableResourcePage resource="purge" page="show" />} />
+                      <Route path="print" element={<LoadablePage name="printingPurge" />} />
                     </Route>
                     <Route path="/settings/*" element={<LoadablePage name="settings" />} />
                     <Route path="/help" element={<LoadablePage name="help" />} />

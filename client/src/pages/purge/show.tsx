@@ -2,6 +2,8 @@ import { DateField, NumberField, Show, TextField } from "@refinedev/antd";
 import { useNavigation, useShow, useTranslate } from "@refinedev/core";
 import { Button, Col, Modal, Row, Tag, Typography } from "antd";
 import dayjs from "dayjs";
+import { PrinterOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router";
 import utc from "dayjs/plugin/utc";
 import { useState } from "react";
 import SpoolIcon from "../../components/spoolIcon";
@@ -14,6 +16,7 @@ const { Title } = Typography;
 
 export const PurgeShow = () => {
     const t = useTranslate();
+    const navigate = useNavigate();
     const { edit } = useNavigation();
     const [lightboxOpen, setLightboxOpen] = useState(false);
 
@@ -60,6 +63,15 @@ export const PurgeShow = () => {
                 title={record ? `#${record.id} — ${fromName} → ${toName}` : ""}
                 headerButtons={({ defaultButtons }) => (
                     <>
+                        {record && (
+                            <Button
+                                type="primary"
+                                icon={<PrinterOutlined />}
+                                onClick={() => navigate(`/purge/print?purges=${record.id}&return=/purge/show/${record.id}`)}
+                            >
+                                {t("printing.qrcode.button")}
+                            </Button>
+                        )}
                         {defaultButtons}
                     </>
                 )}
