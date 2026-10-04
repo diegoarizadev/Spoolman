@@ -4,17 +4,29 @@ import asyncio
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, Path, Query, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator, model_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from spoolman.api.v1.models import Filament, FilamentEvent, Message, MultiColorDirection
+from spoolman.api.v1.models import (
+    Filament,
+    FilamentEvent,
+    Message,
+    MultiColorDirection,
+    Tag,
+    TagConflictMessage,
+    extra_fields_request_description,
+)
+from spoolman.api.v1.tag import TagLinkParameters
 from spoolman.database import filament
+
+# Aliased: `tag` is taken by the find endpoint's query parameter, whose name is API surface.
+from spoolman.database import tag as tag_db
 from spoolman.database.database import get_db_session
-from spoolman.database.utils import SortOrder
-from spoolman.exceptions import ItemDeleteError
+from spoolman.database.utils import parse_sort
+from spoolman.exceptions import ItemDeleteError, TagConflictError
 from spoolman.extra_fields import EntityType, get_extra_fields, validate_extra_field_dict
 from spoolman.ws import websocket_manager
 
@@ -114,9 +126,9 @@ class FilamentParameters(BaseModel):
         ),
         examples=["polymaker_pla_polysonicblack_1000_175"],
     )
-    extra: dict[str, str] | None = Field(
+    extra: dict[str, str | None] | None = Field(
         None,
-        description="Extra fields for this filament.",
+        description=extra_fields_request_description("filament"),
     )
 
     @field_validator("color_hex")
@@ -136,7 +148,7 @@ class FilamentParameters(BaseModel):
         if len(clr) not in (6, 8):
             raise ValueError("Color code must be 6 or 8 characters long.")
 
-        return v
+        return v.removeprefix("#")
 
     @field_validator("multi_color_hexes")
     @classmethod
@@ -144,6 +156,7 @@ class FilamentParameters(BaseModel):
         """Validate the multi_color_hexes field."""
         if not v:
             return None
+        colors = []
         for clr_raw in v.split(","):
             clr = clr_raw.upper()
             clr = clr.removeprefix("#")
@@ -155,7 +168,9 @@ class FilamentParameters(BaseModel):
             if len(clr) not in (6, 8):
                 raise ValueError("Color code must be 6 or 8 characters long.")
 
-        return v
+            colors.append(clr_raw.removeprefix("#"))
+
+        return ",".join(colors)
 
     @model_validator(mode="after")  # type: ignore[]
     def validate(self) -> "FilamentParameters":
@@ -201,6 +216,7 @@ class FilamentUpdateParameters(FilamentParameters):
 )
 async def find(
     *,
+    request: Request,
     db: Annotated[AsyncSession, Depends(get_db_session)],
     vendor_name_old: Annotated[
         str | None,
@@ -279,7 +295,7 @@ async def find(
         str | None,
         Query(
             title="Filament Color",
-            description="Match filament by similar color. Slow operation!",
+            description="Match filament by similar color.",
         ),
     ] = None,
     color_similarity_threshold: Annotated[
@@ -304,6 +320,19 @@ async def find(
             examples=["polymaker_pla_polysonicblack_1000_175"],
         ),
     ] = None,
+    tag: Annotated[
+        str | None,
+        Query(
+            title="Tag UID",
+            description=(
+                "Match the filament that an NFC/RFID tag with this UID is linked to. Exact match on the "
+                "normalized UID: separators are ignored and case does not matter. Only a tag linked to the "
+                "filament itself matches, not a tag on one of its spools; look those up on the spool "
+                "endpoint. Returns either one filament or none. Returns 400 if the UID is not hexadecimal."
+            ),
+            examples=["04A2B3C4D5E6F7", "04:a2:b3:c4:d5:e6:f7"],
+        ),
+    ] = None,
     sort: Annotated[
         str | None,
         Query(
@@ -320,11 +349,10 @@ async def find(
     ] = None,
     offset: Annotated[int, Query(title="Offset", description="Offset in the full result set if a limit is set.")] = 0,
 ) -> JSONResponse:
-    sort_by: dict[str, SortOrder] = {}
-    if sort is not None:
-        for sort_item in sort.split(","):
-            field, direction = sort_item.split(":")
-            sort_by[field] = SortOrder[direction.upper()]
+    try:
+        sort_by = parse_sort(sort)
+    except ValueError as e:
+        return JSONResponse(status_code=400, content=Message(message=str(e)).dict())
 
     vendor_id = vendor_id if vendor_id is not None else vendor_id_old
     if vendor_id is not None:
@@ -333,28 +361,40 @@ async def find(
         vendor_ids = None
 
     if color_hex is not None:
-        matched_filaments = await filament.find_by_color(
+        filter_by_ids = await filament.find_by_color(
             db=db,
             color_query_hex=color_hex,
             similarity_threshold=color_similarity_threshold,
         )
-        filter_by_ids = [db_filament.id for db_filament in matched_filaments]
     else:
         filter_by_ids = None
 
-    db_items, total_count = await filament.find(
-        db=db,
-        ids=filter_by_ids,
-        vendor_name=vendor_name if vendor_name is not None else vendor_name_old,
-        vendor_id=vendor_ids,
-        name=name,
-        material=material,
-        article_number=article_number,
-        external_id=external_id,
-        sort_by=sort_by,
-        limit=limit,
-        offset=offset,
-    )
+    # Extract custom field filters from query parameters
+    extra_field_filters = {}
+    query_params = request.query_params
+    for key, value in query_params.items():
+        if key.startswith("extra."):
+            field_key = key[6:]  # Remove "extra." prefix
+            extra_field_filters[field_key] = value
+
+    try:
+        db_items, total_count = await filament.find(
+            db=db,
+            ids=filter_by_ids,
+            vendor_name=vendor_name if vendor_name is not None else vendor_name_old,
+            vendor_id=vendor_ids,
+            name=name,
+            material=material,
+            article_number=article_number,
+            external_id=external_id,
+            tag=tag,
+            extra_field_filters=extra_field_filters if extra_field_filters else None,
+            sort_by=sort_by,
+            limit=limit,
+            offset=offset,
+        )
+    except ValueError as e:
+        return JSONResponse(status_code=400, content=Message(message=str(e)).dict())
 
     # Set x-total-count header for pagination
     return JSONResponse(
@@ -524,3 +564,69 @@ async def delete(  # noqa: ANN201
             content={"message": "Failed to delete filament, see server logs for more information."},
         )
     return Message(message="Success!")
+
+
+@router.post(
+    "/{filament_id}/tag",
+    name="Link a tag to a filament",
+    description=(
+        "Link a physical NFC/RFID tag to this filament type, so that the tag's UID identifies it. "
+        "A tag identifies exactly one spool or filament; linking a UID that something else already "
+        "holds returns 409 with the holder's id, so a client can offer to move it instead. "
+        "Re-linking a tag to the filament that already holds it succeeds and changes nothing, "
+        "except that a format sent now refines one recorded earlier."
+    ),
+    status_code=201,
+    response_model_exclude_none=True,
+    response_model=Tag,
+    responses={
+        400: {"model": Message},
+        404: {"model": Message},
+        409: {"model": TagConflictMessage},
+    },
+)
+async def link_tag(  # noqa: ANN201
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+    filament_id: int,
+    body: TagLinkParameters,
+):
+    try:
+        db_item = await tag_db.link_filament(db=db, filament_id=filament_id, uid=body.uid, tag_format=body.format)
+    except ValueError as e:
+        return JSONResponse(status_code=400, content=Message(message=str(e)).dict())
+    except TagConflictError as e:
+        return JSONResponse(
+            status_code=409,
+            content=TagConflictMessage(message=str(e), spool_id=e.spool_id, filament_id=e.filament_id).dict(),
+        )
+    return Tag.from_db(db_item)
+
+
+@router.delete(
+    "/{filament_id}/tag/{uid}",
+    name="Unlink a tag from a filament",
+    description=(
+        "Unlink a physical NFC/RFID tag from this filament. The UID is matched the same way it is "
+        "stored: separators are ignored and case does not matter. Deleting a filament unlinks its "
+        "tags on its own, so this is only for taking one tag off a filament that keeps existing."
+    ),
+    status_code=204,
+    responses={400: {"model": Message}, 404: {"model": Message}},
+)
+async def unlink_tag(
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+    filament_id: int,
+    uid: Annotated[
+        str,
+        Path(
+            title="Tag UID",
+            description="The tag's UID, in any shape. Normalized before matching.",
+            examples=["04A2B3C4D5E6F7"],
+        ),
+    ],
+) -> Response:
+    try:
+        await tag_db.unlink_filament(db=db, filament_id=filament_id, uid=uid)
+    except ValueError as e:
+        return JSONResponse(status_code=400, content=Message(message=str(e)).dict())
+    return Response(status_code=204)

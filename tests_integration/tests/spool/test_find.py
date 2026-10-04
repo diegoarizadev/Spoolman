@@ -461,6 +461,32 @@ def test_find_spools_by_empty_and_filled_location(spools: Fixture):
     assert_lists_compatible(spools_result, (spools.spools[0], spools.spools[3], spools.spools[4]))
 
 
+def test_find_spools_by_quoted_location_with_comma(random_filament: dict[str, Any]):
+    """A quoted term is matched whole, even when it contains the comma that separates terms (#1169)."""
+    locations = ["Top shelf, Rack 3", "Top shelf", "Rack 3", "Garage"]
+    spool_ids: list[int] = []
+    for location in locations:
+        result = httpx.post(f"{URL}/api/v1/spool", json={"filament_id": random_filament["id"], "location": location})
+        result.raise_for_status()
+        spool_ids.append(result.json()["id"])
+
+    def find(location: str) -> set[int]:
+        result = httpx.get(
+            f"{URL}/api/v1/spool", params={"filament.id": str(random_filament["id"]), "location": location}
+        )
+        result.raise_for_status()
+        return {spool["id"] for spool in result.json()}
+
+    try:
+        assert find('"Top shelf, Rack 3"') == {spool_ids[0]}
+        assert find('"Top shelf, Rack 3","Garage"') == {spool_ids[0], spool_ids[3]}
+        # Unquoted terms still split on every comma.
+        assert find("Top shelf,Garage") == {spool_ids[0], spool_ids[1], spool_ids[3]}
+    finally:
+        for spool_id in spool_ids:
+            httpx.delete(f"{URL}/api/v1/spool/{spool_id}").raise_for_status()
+
+
 def test_find_spools_by_lot_nr(spools: Fixture):
     # Execute
     result = httpx.get(
@@ -485,3 +511,37 @@ def test_find_spools_by_empty_lot_nr(spools: Fixture):
     # Verify
     spools_result = result.json()
     assert_lists_compatible(spools_result, (spools.spools[3], spools.spools[4]))
+
+
+@pytest.mark.parametrize("order", ["desc", "asc"])
+def test_find_spools_sort_last_used_puts_never_used_last(random_filament: dict[str, Any], order: str):
+    """Spools that have never been used sort last, in both directions.
+
+    `last_used` is NULL until a spool is first used, and the databases disagree on where a NULL
+    goes: PostgreSQL and CockroachDB put it first on DESC, SQLite and MariaDB first on ASC. The
+    library's default "last used, newest first" ordering therefore led with every never-used
+    spool on PostgreSQL (#984, #985). An absent date sorts last either way round.
+    """
+    filament_id = random_filament["id"]
+    spool_ids: list[int] = []
+    for _ in range(3):
+        result = httpx.post(f"{URL}/api/v1/spool", json={"filament_id": filament_id})
+        result.raise_for_status()
+        spool_ids.append(result.json()["id"])
+
+    try:
+        # Use the middle spool only; the other two keep a NULL last_used.
+        httpx.put(f"{URL}/api/v1/spool/{spool_ids[1]}/use", json={"use_weight": 100}).raise_for_status()
+
+        result = httpx.get(
+            f"{URL}/api/v1/spool", params={"filament.id": str(filament_id), "sort": f"last_used:{order}"}
+        )
+        result.raise_for_status()
+
+        spools_result = result.json()
+        assert len(spools_result) == 3
+        assert spools_result[0]["id"] == spool_ids[1]
+        assert all(spool.get("last_used") is None for spool in spools_result[1:])
+    finally:
+        for spool_id in spool_ids:
+            httpx.delete(f"{URL}/api/v1/spool/{spool_id}").raise_for_status()

@@ -10,12 +10,13 @@ from fastapi.responses import JSONResponse
 from starlette.requests import Request
 from starlette.responses import Response
 
-from spoolman import env
+from spoolman import env, update_check
 from spoolman.database.database import backup_global_db
 from spoolman.exceptions import ItemNotFoundError
+from spoolman.externaldb import get_external_db_name
 from spoolman.ws import websocket_manager
 
-from . import export, externaldb, field, filament, models, other, purge, setting, spool, vendor
+from . import export, externaldb, field, filament, models, other, purge, search, setting, spool, tag, vendor
 
 logger = logging.getLogger(__name__)
 
@@ -55,8 +56,11 @@ async def info() -> models.Info:
         logs_dir=str(env.get_logs_dir().resolve()),
         backups_dir=str(env.get_backups_dir().resolve()),
         db_type=str(env.get_database_type() or "sqlite"),
+        external_db_name=get_external_db_name(),
         git_commit=env.get_commit_hash(),
         build_date=env.get_build_date(),
+        latest_version=update_check.latest_version,
+        update_available=update_check.is_update_available(),
     )
 
 
@@ -76,13 +80,13 @@ async def health() -> models.HealthCheck:
 )
 async def backup():  # noqa: ANN201
     """Trigger a database backup."""
-    path = await backup_global_db()
-    if path is None:
+    result = await backup_global_db()
+    if result.path is None:
         return JSONResponse(
             status_code=500,
             content={"message": "Backup failed. See server logs for more information."},
         )
-    return models.BackupResponse(path=str(path))
+    return models.BackupResponse(path=str(result.path), created=result.created)
 
 
 @app.websocket(
@@ -113,3 +117,5 @@ app.include_router(other.router)
 app.include_router(externaldb.router)
 app.include_router(export.router)
 app.include_router(purge.router)
+app.include_router(search.router)
+app.include_router(tag.router)

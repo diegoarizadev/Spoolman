@@ -60,8 +60,8 @@
     "printing": {
         "generic": {
             "title": "Probíhá tisk",
-            "description": "Níže uvedeným nastavením dosáhnete požadovaného rozložení tisku. Mějte na paměti, že tiskárny a váš operační systém mohou použít vlastní okraje a měřítka, takže možná budete muset provést několik pokusů a omylů, než bude vše správně nastaveno. Před tiskem na skutečné štítky si to vyzkoušejte na kousku běžného papíru.",
-            "helpMargin": "Okraje by měly být nastaveny tak, aby odpovídaly papíru na štítky a tiskárně, jejich změna ovlivní velikost celé mřížky.",
+            "description": "Níže uvedeným nastavením dosáhnete požadovaného rozložení tisku. Mějte na paměti, že tiskárny a váš operační systém mohou použít vlastní okraje a měřítka, takže možná budete muset provést několik pokusů a omylů, než bude vše správně nastaveno. Před tiskem na skutečné etikety si to vyzkoušejte na listu běžného papíru.",
+            "helpMargin": "Okraje by měly být nastaveny tak, aby odpovídaly listu etiket a tiskárně, jejich změna ovlivní velikost celé mřížky.",
             "helpPrinterMargin": "Bezpečná zóna by měla být nastavena tak, jak blízko okraje papíru může tiskárna tisknout, jejich změna neovlivní celou mřížku.",
             "print": "Tisk",
             "columns": "Sloupce",
@@ -102,16 +102,16 @@
             "saveAsImage": "Uložit jako obrázek"
         },
         "qrcode": {
-            "button": "Tisk štítků",
-            "title": "Tisk štítku",
+            "button": "Tisk etiket",
+            "title": "Tisk etikety",
             "spoolWeight": "Hmotnost cívky: {{weight}}",
             "lotNr": "Číslo šarže: {{lot}}",
             "bedTemp": "BT: {{temp}}",
             "extruderTemp": "ET: {{temp}}",
-            "textSize": "Velikost textu štítku",
+            "textSize": "Velikost textu etikety",
             "showSpoolmanIcon": "Zobrazit ikonu Spoolman",
             "showVendor": "Výrobce",
-            "showContent": "Tisk štítku",
+            "showContent": "Tisk etikety",
             "showLotNr": "Číslo šarže",
             "showSpoolWeight": "Hmotnost cívky",
             "showTemperatures": "Teploty",
@@ -127,7 +127,7 @@
                 },
                 "preview": "Náhled:"
             },
-            "template": "Šablona štítku",
+            "template": "Šablona etikety",
             "templateHelp": "Pomocí {} vložíte hodnoty objektu cívky jako text. Například, {id} bude nahrazeno ID cívky nebo {filament.material} bude nahrazeno materiálem cívky. Pokud hodnota chybí, bude nahrazena znakem „?“. K odstranění této hodnoty lze použít druhou sadu {}. Kromě toho bude odstraněn jakýkoli text mezi sadami {}, pokud hodnota chybí. Například {Lot Nr: {lot_nr}} zobrazí popisek pouze v případě, že cívka má číslo šarže. Text uzavřete dvojitou hvězdičkou **, aby byl tučný. Kliknutím na tlačítko zobrazíte seznam všech dostupných značek.",
             "showQRCode": "Tisk QR kódu",
             "showQRCodeMode": {
@@ -138,7 +138,7 @@
         },
         "spoolSelect": {
             "title": "Vybrat cívky",
-            "description": "Vyberte cívky, pro které chcete tisknout štítky.",
+            "description": "Vyberte cívky, pro které chcete tisknout etikety.",
             "showArchived": "Zobrazit archivované",
             "noSpoolsSelected": "Nevybrali jste žádné cívky.",
             "selectAll": "Vybrat/odebrat vše",
@@ -351,7 +351,7 @@
     "kofi": "Příspěvek autorovi na Ko-fi",
     "home": {
         "home": "Domů",
-        "description": "Vypadá to, že jste ještě nepřidali žádné cívky. Úvodní nápovědu najdete na stránce <helpPageLink>Help page</helpPageLink> .",
+        "description": "Vypadá to, že jste ještě nepřidali žádné cívky. Úvodní nápovědu najdete na stránce <helpPageLink>Nápověda</helpPageLink> .",
         "welcome": "Vítejte ve vaší instanci Spoolman!"
     },
     "settings": {
@@ -383,8 +383,9 @@
             "non_unique_key_error": "Tento klíč musí být jedinečný.",
             "key_not_changed": "Změňte prosím klíč na jiný.",
             "delete_confirm": "Smazat pole {{name}}?",
-            "description": "<p>Zde můžete přidat další vlastní pole k subjektům.</p><p>Jakmile je pole přidáno, nemůžete změnit jeho klíč ani typ a u polí typu výběr nemůžete odebrat volby ani změnit stav více voleb. Pokud pole odstraníte, budou odstraněna přidružená data pro všechny subjekty.</p><p>Klíčové je, jako co ostatní programy čtou/zapisují data, takže pokud má být vaše vlastní pole integrováno s programem třetí strany, ujistěte se, že je správně nastaveno. Výchozí hodnota se použije pouze pro nové položky.</p><p>Výstupní pole nelze v zobrazeních tabulky řadit ani filtrovat.</p>",
-            "delete_confirm_description": "Tím se odstraní pole a všechna související data pro všechny subjekty."
+            "description": "<p>Zde můžete přidat další vlastní pole k subjektům.</p><p>Jakmile je pole přidáno, nelze změnit jeho klíč ani typ; u polí typu „výběr“ nelze odstranit možnosti ani změnit nastavení pro více výběrů. Pokud pole odstraníte, budou smazána související data u všech subjektů.</p><p>Klíč určuje, pod jakým názvem budou data čtena a zapisována jinými programy, takže pokud má být vaše vlastní pole integrováno s programem třetí strany ujistěte se, že je správně nastaveno. Výchozí hodnota se použije pouze u nových položek.</p><p>Vlastní pole lze zobrazit a seřadit v tabulkových zobrazeních. Pole s výběrem a logická pole zde také nabízejí možnosti filtrování a všechny typy vlastních polí podporují filtrování podle prázdných hodnot.</p>",
+            "delete_confirm_description": "Tím se odstraní pole a všechna související data pro všechny subjekty.",
+            "choices_reorder_hint": "Přetažením nebo pomocí šipek můžete změnit pořadí této volby."
         },
         "header": "Nastavení",
         "general": {
@@ -408,5 +409,11 @@
         "no_locations_help": "Na této stránce můžete uspořádat své cívky podle umístění, přidejte několik cívek a začněte!",
         "new_location": "Nové umístění",
         "no_location": "Žádné umístění"
+    },
+    "theme": {
+        "label": "Téma",
+        "system": "Systém",
+        "light": "Světlé",
+        "dark": "Tmavé"
     }
 }
