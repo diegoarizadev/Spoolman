@@ -16,6 +16,7 @@ import {
   SortedColumn,
   SpoolIconColumn,
 } from "../../components/column";
+import { ParsedExtras } from "../../components/extraFields";
 import { useLiveify } from "../../components/liveify";
 import {
   useSpoolmanArticleNumbers,
@@ -27,12 +28,24 @@ import { removeUndefined } from "../../utils/filtering";
 import { EntityType, useGetFields } from "../../utils/queryFields";
 import { TableState, useInitialTableState, useStoreInitialState } from "../../utils/saveload";
 import { useCurrencyFormatter } from "../../utils/settings";
+import {
+  buildCalibrationColumns,
+  buildMaterialDefaultsColumns,
+  CALIBRATION_COLUMN_IDS,
+  CALIBRATION_COLUMNS,
+  MATERIAL_DEFAULTS_COLUMN_IDS,
+  MATERIAL_DEFAULTS_FIELDS,
+  useCalibrationsByFilament,
+  useMaterialDefaultsByRow,
+} from "./listEnrichment";
 import { IFilament } from "./model";
 
 dayjs.extend(utc);
 
 interface IFilamentCollapsed extends Omit<IFilament, "vendor"> {
   "vendor.name": string | null;
+  material_defaults?: Partial<Record<string, string>>;
+  calibration?: Record<string, string>;
 }
 
 function collapseFilament(element: IFilament): IFilamentCollapsed {
@@ -50,7 +63,9 @@ function translateColumnI18nKey(columnName: string): string {
   return `filament.fields.${columnName}`;
 }
 
-const namespace = "filamentList-v2";
+// v3 bump: rolls out Tipo/Material Defaults/Calibraciones as default-visible once, without
+// permanently re-forcing them back on if the user later hides one -- see defaultColumns below.
+const namespace = "filamentList-v3";
 
 const allColumns: (keyof IFilamentCollapsed & string)[] = [
   "id",
@@ -68,9 +83,12 @@ const allColumns: (keyof IFilamentCollapsed & string)[] = [
   "registered",
   "comment",
 ];
-const defaultColumns = allColumns.filter(
-  (column_id) => ["registered", "density", "diameter", "spool_weight"].indexOf(column_id) === -1,
-);
+const defaultColumns: string[] = [
+  ...allColumns.filter((column_id) => ["registered", "density", "diameter", "spool_weight"].indexOf(column_id) === -1),
+  "extra.tipo",
+  ...MATERIAL_DEFAULTS_COLUMN_IDS,
+  ...CALIBRATION_COLUMN_IDS,
+];
 
 export const FilamentList = () => {
   const t = useTranslate();
@@ -79,7 +97,12 @@ export const FilamentList = () => {
   const extraFields = useGetFields(EntityType.filament);
   const currencyFormatter = useCurrencyFormatter();
 
-  const allColumnsWithExtraFields = [...allColumns, ...(extraFields.data?.map((field) => "extra." + field.key) ?? [])];
+  const allColumnsWithExtraFields = [
+    ...allColumns,
+    ...(extraFields.data?.map((field) => "extra." + field.key) ?? []),
+    ...MATERIAL_DEFAULTS_COLUMN_IDS,
+    ...CALIBRATION_COLUMN_IDS,
+  ];
 
   // Load initial state
   const initialState = useInitialTableState(namespace);
@@ -141,7 +164,27 @@ export const FilamentList = () => {
     () => (tableProps.dataSource || []).map((record) => ({ ...record })),
     [tableProps.dataSource],
   );
-  const dataSource = useLiveify("filament", queryDataSource, collapseFilament);
+  const liveDataSource = useLiveify("filament", queryDataSource, collapseFilament);
+
+  // Look up Material Defaults (by vendor+material+tipo, deduped) and Calibraciones (one bulk
+  // fetch grouped by filament) for the currently visible page, then merge them onto each row so
+  // the generic column renderers can read them like any other field.
+  const materialDefaultsByCombo = useMaterialDefaultsByRow(liveDataSource);
+  const calibrationsByFilament = useCalibrationsByFilament();
+  const dataSource: IFilamentCollapsed[] = useMemo(
+    () =>
+      liveDataSource.map((row) => {
+        const tipo = ParsedExtras(row).extra?.tipo;
+        const key = `${row["vendor.name"] ?? ""}|${row.material ?? ""}|${typeof tipo === "string" ? tipo : ""}`;
+        const materialDefaults = materialDefaultsByCombo.get(key);
+        return {
+          ...row,
+          material_defaults: (materialDefaults ?? {}) as Partial<Record<string, string>>,
+          calibration: calibrationsByFilament.get(row.id) ?? {},
+        };
+      }),
+    [liveDataSource, materialDefaultsByCombo, calibrationsByFilament],
+  );
 
   if (tableProps.pagination) {
     tableProps.pagination.showSizeChanger = true;
@@ -189,6 +232,22 @@ export const FilamentList = () => {
                   return {
                     key: column_id,
                     label: extraField?.name ?? column_id,
+                  };
+                }
+
+                if (column_id.indexOf("material_defaults.") === 0) {
+                  const field = MATERIAL_DEFAULTS_FIELDS.find((f) => `material_defaults.${f.key}` === column_id);
+                  return {
+                    key: column_id,
+                    label: field?.label ?? column_id,
+                  };
+                }
+
+                if (column_id.indexOf("calibration.") === 0) {
+                  const config = CALIBRATION_COLUMNS.find((c) => `calibration.${c.type}` === column_id);
+                  return {
+                    key: column_id,
+                    label: config?.label ?? column_id,
                   };
                 }
 
@@ -335,6 +394,8 @@ export const FilamentList = () => {
               field,
             });
           }) ?? []),
+          ...buildMaterialDefaultsColumns<IFilamentCollapsed>(tableState),
+          ...buildCalibrationColumns<IFilamentCollapsed>(tableState),
           RichColumn({
             ...commonProps,
             id: "comment",
