@@ -165,6 +165,46 @@ class PurgeCalibration(Base):
     to_filament: Mapped["Filament"] = relationship(foreign_keys=[to_filament_id])
 
 
+class FilamentCalibration(Base):
+    """A single OrcaSlicer calibration test result recorded against one filament.
+
+    One row per test attempt (a filament can have several over time, e.g. re-calibrating
+    after a new batch). `calibration_type` says which OrcaSlicer test this is; only the
+    value columns relevant to that type are populated, the rest stay null.
+    """
+
+    __tablename__ = "filament_calibration"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    registered: Mapped[datetime] = mapped_column()
+    filament_id: Mapped[int] = mapped_column(ForeignKey("filament.id", ondelete="CASCADE"), index=True)
+    calibration_type: Mapped[str] = mapped_column(String(32), index=True)
+
+    # Temperature tower
+    nozzle_temp: Mapped[float | None] = mapped_column()
+    # Pressure Advance / Adaptive PA
+    pa_value: Mapped[float | None] = mapped_column()
+    flow_rate: Mapped[float | None] = mapped_column()
+    acceleration: Mapped[float | None] = mapped_column()
+    # Flow Ratio
+    flow_ratio: Mapped[float | None] = mapped_column()
+    # Tolerance
+    tolerance_offset: Mapped[float | None] = mapped_column()
+    # VFA -- vertical fine artifacts / resonance
+    vfa_speed_min: Mapped[float | None] = mapped_column()
+    vfa_speed_max: Mapped[float | None] = mapped_column()
+    # Max Volumetric Speed
+    max_volumetric_speed: Mapped[float | None] = mapped_column()
+    # Ironing
+    ironing_flow: Mapped[float | None] = mapped_column()
+    ironing_speed: Mapped[float | None] = mapped_column()
+
+    image_path: Mapped[str | None] = mapped_column(String(512))
+    notes: Mapped[str | None] = mapped_column(String(1024))
+
+    filament: Mapped["Filament"] = relationship(foreign_keys=[filament_id])
+
+
 class Tag(Base):
     """A physical NFC/RFID tag, and the thing tapping it should bring up.
 

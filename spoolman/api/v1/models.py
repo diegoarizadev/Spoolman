@@ -865,6 +865,108 @@ class PurgeCalibrationUpdate(BaseModel):
     comment: str | None = Field(None, max_length=1024, description="Comment about this calibration.")
 
 
+class FilamentCalibration(BaseModel):
+    id: int = Field(description="Unique internal ID of this calibration record.")
+    registered: SpoolmanDateTime = Field(description="When the calibration was registered. UTC Timezone.")
+    filament: Filament = Field(description="The filament this calibration was done for.")
+    calibration_type: str = Field(
+        description=(
+            "Which OrcaSlicer calibration test this is: temperature, pressure_advance, adaptive_pa, "
+            "flow_ratio, tolerance, vfa, volumetric_speed or ironing."
+        ),
+        examples=["pressure_advance"],
+    )
+    nozzle_temp: float | None = Field(None, description="Nozzle temperature in °C (temperature test).")
+    pa_value: float | None = Field(
+        None,
+        description="Pressure Advance coefficient (pressure_advance or adaptive_pa test).",
+    )
+    flow_rate: float | None = Field(
+        None,
+        description="Volumetric flow rate in mm3/s this PA value was measured at (adaptive_pa test).",
+    )
+    acceleration: float | None = Field(
+        None,
+        description="Acceleration in mm/s2 this PA value was measured at (adaptive_pa test).",
+    )
+    flow_ratio: float | None = Field(None, description="Flow ratio (flow_ratio test).")
+    tolerance_offset: float | None = Field(
+        None,
+        description="Best-fit hole tolerance offset in mm (tolerance test).",
+    )
+    vfa_speed_min: float | None = Field(
+        None,
+        description="Lower bound of the problematic speed range in mm/s (vfa test).",
+    )
+    vfa_speed_max: float | None = Field(
+        None,
+        description="Upper bound of the problematic speed range in mm/s (vfa test).",
+    )
+    max_volumetric_speed: float | None = Field(
+        None,
+        description="Maximum volumetric speed in mm3/s without defects (volumetric_speed test).",
+    )
+    ironing_flow: float | None = Field(None, description="Ironing flow in % (ironing).")
+    ironing_speed: float | None = Field(None, description="Ironing speed in mm/s (ironing).")
+    image_path: str | None = Field(None, description="Path to the evidence image.")
+    notes: str | None = Field(None, max_length=1024, description="Notes about this calibration.")
+
+    @staticmethod
+    def from_db(item: models.FilamentCalibration) -> "FilamentCalibration":
+        """Create a new Pydantic FilamentCalibration object from a database object."""
+        return FilamentCalibration(
+            id=item.id,
+            registered=item.registered,
+            filament=Filament.from_db(item.filament),
+            calibration_type=item.calibration_type,
+            nozzle_temp=item.nozzle_temp,
+            pa_value=item.pa_value,
+            flow_rate=item.flow_rate,
+            acceleration=item.acceleration,
+            flow_ratio=item.flow_ratio,
+            tolerance_offset=item.tolerance_offset,
+            vfa_speed_min=item.vfa_speed_min,
+            vfa_speed_max=item.vfa_speed_max,
+            max_volumetric_speed=item.max_volumetric_speed,
+            ironing_flow=item.ironing_flow,
+            ironing_speed=item.ironing_speed,
+            image_path=item.image_path,
+            notes=item.notes,
+        )
+
+
+class FilamentCalibrationCreate(BaseModel):
+    filament_id: int = Field(description="The filament this calibration was done for.")
+    calibration_type: str = Field(description="Which OrcaSlicer calibration test this is.")
+    nozzle_temp: float | None = Field(None)
+    pa_value: float | None = Field(None)
+    flow_rate: float | None = Field(None)
+    acceleration: float | None = Field(None)
+    flow_ratio: float | None = Field(None)
+    tolerance_offset: float | None = Field(None)
+    vfa_speed_min: float | None = Field(None)
+    vfa_speed_max: float | None = Field(None)
+    max_volumetric_speed: float | None = Field(None)
+    ironing_flow: float | None = Field(None)
+    ironing_speed: float | None = Field(None)
+    notes: str | None = Field(None, max_length=1024)
+
+
+class FilamentCalibrationUpdate(BaseModel):
+    nozzle_temp: float | None = Field(None)
+    pa_value: float | None = Field(None)
+    flow_rate: float | None = Field(None)
+    acceleration: float | None = Field(None)
+    flow_ratio: float | None = Field(None)
+    tolerance_offset: float | None = Field(None)
+    vfa_speed_min: float | None = Field(None)
+    vfa_speed_max: float | None = Field(None)
+    max_volumetric_speed: float | None = Field(None)
+    ironing_flow: float | None = Field(None)
+    ironing_speed: float | None = Field(None)
+    notes: str | None = Field(None, max_length=1024)
+
+
 class TagScanEvent(Event):
     """A tag was scanned by a reader.
 
