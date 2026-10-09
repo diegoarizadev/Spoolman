@@ -1,0 +1,33 @@
+export interface IPrinter {
+  id: number;
+  registered: string;
+  manufacturer: string;
+  model: string;
+  build_volume_x?: number;
+  build_volume_y?: number;
+  build_volume_z?: number;
+  nozzle_diameters?: string;
+  max_hotend_temp?: number;
+  max_bed_temp?: number;
+  chamber_enclosed: boolean;
+  chamber_heated: boolean;
+  chamber_max_temp?: number;
+  ams_compatible: boolean;
+  ams_units?: string;
+  print_heads?: number;
+  colors_supported?: number;
+  supported_materials?: string;
+  max_print_speed?: number;
+  max_acceleration?: number;
+  physical_width?: number;
+  physical_depth?: number;
+  physical_height?: number;
+  net_weight?: number;
+  voltage?: string;
+  frequency?: string;
+  max_power?: number;
+  connectivity?: string;
+  sku?: string;
+  image_path?: string;
+  comment?: string;
+}
