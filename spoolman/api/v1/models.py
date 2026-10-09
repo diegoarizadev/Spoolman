@@ -967,6 +967,143 @@ class FilamentCalibrationUpdate(BaseModel):
     notes: str | None = Field(None, max_length=1024)
 
 
+class Printer(BaseModel):
+    id: int = Field(description="Unique internal ID of this printer.")
+    registered: SpoolmanDateTime = Field(description="When the printer was registered. UTC Timezone.")
+    manufacturer: str = Field(max_length=64, description="Printer manufacturer.", examples=["Bambu Lab"])
+    model: str = Field(max_length=64, description="Printer model name.", examples=["A1"])
+    build_volume_x: float | None = Field(None, description="Build volume width in mm.")
+    build_volume_y: float | None = Field(None, description="Build volume depth in mm.")
+    build_volume_z: float | None = Field(None, description="Build volume height in mm.")
+    nozzle_diameters: str | None = Field(None, description="Comma-separated available nozzle diameters in mm.")
+    max_hotend_temp: int | None = Field(None, description="Maximum hotend temperature in °C.")
+    max_bed_temp: int | None = Field(None, description="Maximum bed temperature in °C.")
+    chamber_enclosed: bool = Field(default=False, description="Whether the build chamber is enclosed.")
+    chamber_heated: bool = Field(default=False, description="Whether the build chamber is actively heated.")
+    chamber_max_temp: int | None = Field(None, description="Maximum chamber temperature in °C, if heated.")
+    ams_compatible: bool = Field(default=False, description="Whether this printer supports an AMS/MMU unit.")
+    ams_units: str | None = Field(None, description="Comma-separated compatible AMS/MMU unit names.")
+    print_heads: int | None = Field(None, description="Number of print heads/extruders.")
+    colors_supported: int | None = Field(None, description="Max simultaneous colors (e.g. via AMS).")
+    supported_materials: str | None = Field(None, description="Comma-separated supported materials.")
+    max_print_speed: float | None = Field(None, description="Maximum print speed in mm/s.")
+    max_acceleration: float | None = Field(None, description="Maximum acceleration in mm/s2.")
+    physical_width: float | None = Field(None, description="Physical width of the printer itself in mm.")
+    physical_depth: float | None = Field(None, description="Physical depth of the printer itself in mm.")
+    physical_height: float | None = Field(None, description="Physical height of the printer itself in mm.")
+    net_weight: float | None = Field(None, description="Net weight in kg.")
+    voltage: str | None = Field(None, description="Input voltage, e.g. '100-240'.")
+    frequency: str | None = Field(None, description="Input frequency in Hz, e.g. '50/60'.")
+    max_power: float | None = Field(None, description="Max power draw in W.")
+    connectivity: str | None = Field(None, description="Comma-separated connectivity options.")
+    sku: str | None = Field(None, max_length=128, description="Manufacturer's SKU.")
+    image_path: str | None = Field(None, description="Path to the printer's photo.")
+    comment: str | None = Field(None, max_length=1024, description="Free text comment.")
+
+    @staticmethod
+    def from_db(item: models.Printer) -> "Printer":
+        """Create a new Pydantic Printer object from a database object."""
+        return Printer(
+            id=item.id,
+            registered=item.registered,
+            manufacturer=item.manufacturer,
+            model=item.model,
+            build_volume_x=item.build_volume_x,
+            build_volume_y=item.build_volume_y,
+            build_volume_z=item.build_volume_z,
+            nozzle_diameters=item.nozzle_diameters,
+            max_hotend_temp=item.max_hotend_temp,
+            max_bed_temp=item.max_bed_temp,
+            chamber_enclosed=item.chamber_enclosed,
+            chamber_heated=item.chamber_heated,
+            chamber_max_temp=item.chamber_max_temp,
+            ams_compatible=item.ams_compatible,
+            ams_units=item.ams_units,
+            print_heads=item.print_heads,
+            colors_supported=item.colors_supported,
+            supported_materials=item.supported_materials,
+            max_print_speed=item.max_print_speed,
+            max_acceleration=item.max_acceleration,
+            physical_width=item.physical_width,
+            physical_depth=item.physical_depth,
+            physical_height=item.physical_height,
+            net_weight=item.net_weight,
+            voltage=item.voltage,
+            frequency=item.frequency,
+            max_power=item.max_power,
+            connectivity=item.connectivity,
+            sku=item.sku,
+            image_path=item.image_path,
+            comment=item.comment,
+        )
+
+
+class PrinterParameters(BaseModel):
+    manufacturer: str = Field(max_length=64, description="Printer manufacturer.")
+    model: str = Field(max_length=64, description="Printer model name.")
+    build_volume_x: float | None = Field(None)
+    build_volume_y: float | None = Field(None)
+    build_volume_z: float | None = Field(None)
+    nozzle_diameters: str | None = Field(None)
+    max_hotend_temp: int | None = Field(None)
+    max_bed_temp: int | None = Field(None)
+    chamber_enclosed: bool = Field(default=False)
+    chamber_heated: bool = Field(default=False)
+    chamber_max_temp: int | None = Field(None)
+    ams_compatible: bool = Field(default=False)
+    ams_units: str | None = Field(None)
+    print_heads: int | None = Field(None)
+    colors_supported: int | None = Field(None)
+    supported_materials: str | None = Field(None)
+    max_print_speed: float | None = Field(None)
+    max_acceleration: float | None = Field(None)
+    physical_width: float | None = Field(None)
+    physical_depth: float | None = Field(None)
+    physical_height: float | None = Field(None)
+    net_weight: float | None = Field(None)
+    voltage: str | None = Field(None)
+    frequency: str | None = Field(None)
+    max_power: float | None = Field(None)
+    connectivity: str | None = Field(None)
+    sku: str | None = Field(None, max_length=128)
+    comment: str | None = Field(None, max_length=1024)
+
+
+class PrinterCreate(PrinterParameters):
+    pass
+
+
+class PrinterUpdate(BaseModel):
+    manufacturer: str | None = Field(None, max_length=64)
+    model: str | None = Field(None, max_length=64)
+    build_volume_x: float | None = Field(None)
+    build_volume_y: float | None = Field(None)
+    build_volume_z: float | None = Field(None)
+    nozzle_diameters: str | None = Field(None)
+    max_hotend_temp: int | None = Field(None)
+    max_bed_temp: int | None = Field(None)
+    chamber_enclosed: bool | None = Field(None)
+    chamber_heated: bool | None = Field(None)
+    chamber_max_temp: int | None = Field(None)
+    ams_compatible: bool | None = Field(None)
+    ams_units: str | None = Field(None)
+    print_heads: int | None = Field(None)
+    colors_supported: int | None = Field(None)
+    supported_materials: str | None = Field(None)
+    max_print_speed: float | None = Field(None)
+    max_acceleration: float | None = Field(None)
+    physical_width: float | None = Field(None)
+    physical_depth: float | None = Field(None)
+    physical_height: float | None = Field(None)
+    net_weight: float | None = Field(None)
+    voltage: str | None = Field(None)
+    frequency: str | None = Field(None)
+    max_power: float | None = Field(None)
+    connectivity: str | None = Field(None)
+    sku: str | None = Field(None, max_length=128)
+    comment: str | None = Field(None, max_length=1024)
+
+
 class TagScanEvent(Event):
     """A tag was scanned by a reader.
 

@@ -25,6 +25,7 @@ from . import (
     material_defaults,
     models,
     other,
+    printer,
     purge,
     search,
     setting,
@@ -134,5 +135,6 @@ app.include_router(material_defaults.router)
 app.include_router(export.router)
 app.include_router(purge.router)
 app.include_router(filament_calibration.router)
+app.include_router(printer.router)
 app.include_router(search.router)
 app.include_router(tag.router)

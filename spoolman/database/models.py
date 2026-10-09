@@ -205,6 +205,66 @@ class FilamentCalibration(Base):
     filament: Mapped["Filament"] = relationship(foreign_keys=[filament_id])
 
 
+class Printer(Base):
+    """A 3D printer model's hardware specs, for reference.
+
+    Build volume, temps, AMS/MMU compatibility, electrical specs... Not tied to spools or
+    filaments -- a catalog entry you create once per printer model you own, independent of
+    what you've printed with it.
+    """
+
+    __tablename__ = "printer"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    registered: Mapped[datetime] = mapped_column()
+    manufacturer: Mapped[str] = mapped_column(String(64), index=True)
+    model: Mapped[str] = mapped_column(String(64))
+
+    # Build volume, mm
+    build_volume_x: Mapped[float | None] = mapped_column()
+    build_volume_y: Mapped[float | None] = mapped_column()
+    build_volume_z: Mapped[float | None] = mapped_column()
+
+    # Comma-separated, e.g. "0.2,0.4,0.6,0.8"
+    nozzle_diameters: Mapped[str | None] = mapped_column(String(128))
+
+    max_hotend_temp: Mapped[int | None] = mapped_column()
+    max_bed_temp: Mapped[int | None] = mapped_column()
+
+    chamber_enclosed: Mapped[bool] = mapped_column(default=False)
+    chamber_heated: Mapped[bool] = mapped_column(default=False)
+    chamber_max_temp: Mapped[int | None] = mapped_column()
+
+    ams_compatible: Mapped[bool] = mapped_column(default=False)
+    # Comma-separated AMS/MMU unit names, e.g. "AMS,AMS Lite,AMS 2 Pro,AMS HT"
+    ams_units: Mapped[str | None] = mapped_column(String(256))
+    print_heads: Mapped[int | None] = mapped_column()
+    colors_supported: Mapped[int | None] = mapped_column()
+
+    # Comma-separated, e.g. "PETG,PLA,PVA,TPU"
+    supported_materials: Mapped[str | None] = mapped_column(String(256))
+
+    max_print_speed: Mapped[float | None] = mapped_column()
+    max_acceleration: Mapped[float | None] = mapped_column()
+
+    # Physical footprint of the printer itself, mm -- distinct from build volume
+    physical_width: Mapped[float | None] = mapped_column()
+    physical_depth: Mapped[float | None] = mapped_column()
+    physical_height: Mapped[float | None] = mapped_column()
+    net_weight: Mapped[float | None] = mapped_column()
+
+    voltage: Mapped[str | None] = mapped_column(String(32))
+    frequency: Mapped[str | None] = mapped_column(String(32))
+    max_power: Mapped[float | None] = mapped_column()
+
+    # Comma-separated, e.g. "WiFi,Bambu-Bus"
+    connectivity: Mapped[str | None] = mapped_column(String(128))
+
+    sku: Mapped[str | None] = mapped_column(String(128))
+    image_path: Mapped[str | None] = mapped_column(String(512))
+    comment: Mapped[str | None] = mapped_column(String(1024))
+
+
 class Tag(Base):
     """A physical NFC/RFID tag, and the thing tapping it should bring up.
 
