@@ -1,9 +1,11 @@
+import { CameraOutlined } from "@ant-design/icons";
 import { Edit, useForm, useSelect } from "@refinedev/antd";
 import { HttpError, useTranslate } from "@refinedev/core";
-import { Alert, ColorPicker, DatePicker, Form, Input, InputNumber, message, Radio, Select, Typography } from "antd";
+import { Alert, Button, ColorPicker, DatePicker, Form, Input, InputNumber, message, Radio, Select, Typography } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
+import { ColorPickerFromPhoto } from "../../components/colorPickerFromPhoto";
 import { ExtraFieldFormItem, ParsedExtras, StringifiedExtras } from "../../components/extraFields";
 import { MultiColorPicker } from "../../components/multiColorPicker";
 import { formatNumberOnUserInput, numberParser, numberParserAllowEmpty } from "../../utils/parsing";
@@ -30,6 +32,7 @@ export const FilamentEdit = () => {
   const extraFields = useGetFields(EntityType.filament);
   const currency = useCurrency();
   const [colorType, setColorType] = useState<"single" | "multi">("single");
+  const [isColorFromPhotoOpen, setIsColorFromPhotoOpen] = useState(false);
 
   const { formProps, saveButtonProps } = useForm<IFilament, HttpError, IFilamentRequest, IFilament>({
     liveMode: "manual",
@@ -163,20 +166,34 @@ export const FilamentEdit = () => {
           </Radio.Group>
         </Form.Item>
         {colorType == "single" && (
-          <Form.Item
-            name={"color_hex"}
-            rules={[
-              {
-                required: false,
-              },
-            ]}
-            getValueFromEvent={(e) => {
-              return e?.toHex();
-            }}
-          >
-            <ColorPicker />
-          </Form.Item>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Form.Item
+              name={"color_hex"}
+              rules={[
+                {
+                  required: false,
+                },
+              ]}
+              getValueFromEvent={(e) => {
+                return e?.toHex();
+              }}
+              noStyle
+            >
+              <ColorPicker />
+            </Form.Item>
+            <Button icon={<CameraOutlined />} onClick={() => setIsColorFromPhotoOpen(true)}>
+              Color desde foto
+            </Button>
+          </div>
         )}
+        <ColorPickerFromPhoto
+          open={isColorFromPhotoOpen}
+          onPick={(hex) => {
+            formProps.form?.setFieldValue("color_hex", hex);
+            setIsColorFromPhotoOpen(false);
+          }}
+          onCancel={() => setIsColorFromPhotoOpen(false)}
+        />
         {colorType == "multi" && (
           <Form.Item
             name={"multi_color_direction"}
