@@ -14,7 +14,7 @@ export interface IFilamentCalibration {
   max_volumetric_speed?: number;
   ironing_flow?: number;
   ironing_speed?: number;
-  image_path?: string;
+  images?: { id: number }[];
   notes?: string;
 }
 

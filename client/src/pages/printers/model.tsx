@@ -29,5 +29,7 @@ export interface IPrinter {
   connectivity?: string;
   sku?: string;
   image_path?: string;
+  ams_location?: string;
+  ams_slot_order?: string;
   comment?: string;
 }

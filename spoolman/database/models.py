@@ -165,6 +165,27 @@ class PurgeCalibration(Base):
     to_filament: Mapped["Filament"] = relationship(foreign_keys=[to_filament_id])
 
 
+class CalibrationImage(Base):
+    """One evidence photo of a calibration test.
+
+    A calibration (filament or printer VFA) can have any number of photos. Exactly one of the
+    two foreign keys is set, depending on which kind of calibration the photo belongs to.
+    """
+
+    __tablename__ = "calibration_image"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    filament_calibration_id: Mapped[int | None] = mapped_column(
+        ForeignKey("filament_calibration.id", ondelete="CASCADE"),
+        index=True,
+    )
+    printer_calibration_id: Mapped[int | None] = mapped_column(
+        ForeignKey("printer_calibration.id", ondelete="CASCADE"),
+        index=True,
+    )
+    image_path: Mapped[str] = mapped_column(String(512))
+
+
 class FilamentCalibration(Base):
     """A single OrcaSlicer calibration test result recorded against one filament.
 
@@ -203,6 +224,38 @@ class FilamentCalibration(Base):
     notes: Mapped[str | None] = mapped_column(String(1024))
 
     filament: Mapped["Filament"] = relationship(foreign_keys=[filament_id])
+    images: Mapped[list["CalibrationImage"]] = relationship(
+        primaryjoin="CalibrationImage.filament_calibration_id == FilamentCalibration.id",
+        order_by="CalibrationImage.id",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+
+
+class PrinterCalibration(Base):
+    """A VFA (resonance) test result recorded against one printer.
+
+    VFA depends on the machine (frame, motion system), not the filament, so it lives on the
+    printer. A printer can have several attempts over time (e.g. after maintenance).
+    """
+
+    __tablename__ = "printer_calibration"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    registered: Mapped[datetime] = mapped_column()
+    printer_id: Mapped[int] = mapped_column(ForeignKey("printer.id", ondelete="CASCADE"), index=True)
+    vfa_speed_min: Mapped[float | None] = mapped_column()
+    vfa_speed_max: Mapped[float | None] = mapped_column()
+    image_path: Mapped[str | None] = mapped_column(String(512))
+    notes: Mapped[str | None] = mapped_column(String(1024))
+
+    printer: Mapped["Printer"] = relationship(foreign_keys=[printer_id])
+    images: Mapped[list["CalibrationImage"]] = relationship(
+        primaryjoin="CalibrationImage.printer_calibration_id == PrinterCalibration.id",
+        order_by="CalibrationImage.id",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
 
 
 class Printer(Base):
@@ -262,6 +315,8 @@ class Printer(Base):
 
     sku: Mapped[str | None] = mapped_column(String(128))
     image_path: Mapped[str | None] = mapped_column(String(512))
+    ams_location: Mapped[str | None] = mapped_column(String(64))
+    ams_slot_order: Mapped[str | None] = mapped_column(String(1024))
     comment: Mapped[str | None] = mapped_column(String(1024))
 
 

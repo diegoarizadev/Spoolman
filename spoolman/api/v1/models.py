@@ -865,6 +865,15 @@ class PurgeCalibrationUpdate(BaseModel):
     comment: str | None = Field(None, max_length=1024, description="Comment about this calibration.")
 
 
+class CalibrationImage(BaseModel):
+    id: int = Field(description="Unique internal ID of this evidence image.")
+
+    @staticmethod
+    def from_db(item: models.CalibrationImage) -> "CalibrationImage":
+        """Create a new Pydantic CalibrationImage object from a database object."""
+        return CalibrationImage(id=item.id)
+
+
 class FilamentCalibration(BaseModel):
     id: int = Field(description="Unique internal ID of this calibration record.")
     registered: SpoolmanDateTime = Field(description="When the calibration was registered. UTC Timezone.")
@@ -908,7 +917,7 @@ class FilamentCalibration(BaseModel):
     )
     ironing_flow: float | None = Field(None, description="Ironing flow in % (ironing).")
     ironing_speed: float | None = Field(None, description="Ironing speed in mm/s (ironing).")
-    image_path: str | None = Field(None, description="Path to the evidence image.")
+    images: list[CalibrationImage] = Field(default_factory=list, description="Evidence images.")
     notes: str | None = Field(None, max_length=1024, description="Notes about this calibration.")
 
     @staticmethod
@@ -930,7 +939,7 @@ class FilamentCalibration(BaseModel):
             max_volumetric_speed=item.max_volumetric_speed,
             ironing_flow=item.ironing_flow,
             ironing_speed=item.ironing_speed,
-            image_path=item.image_path,
+            images=[CalibrationImage.from_db(img) for img in item.images],
             notes=item.notes,
         )
 
@@ -998,6 +1007,16 @@ class Printer(BaseModel):
     connectivity: str | None = Field(None, description="Comma-separated connectivity options.")
     sku: str | None = Field(None, max_length=128, description="Manufacturer's SKU.")
     image_path: str | None = Field(None, description="Path to the printer's photo.")
+    ams_location: str | None = Field(
+        None,
+        max_length=64,
+        description="Spool location linked to this printer's AMS. Spools keep their own location; this only links it.",
+    )
+    ams_slot_order: str | None = Field(
+        None,
+        max_length=1024,
+        description="JSON list of spool IDs in AMS slot order (A1, A2...). Independent of Spool.location.",
+    )
     comment: str | None = Field(None, max_length=1024, description="Free text comment.")
 
     @staticmethod
@@ -1034,6 +1053,8 @@ class Printer(BaseModel):
             connectivity=item.connectivity,
             sku=item.sku,
             image_path=item.image_path,
+            ams_location=item.ams_location,
+            ams_slot_order=item.ams_slot_order,
             comment=item.comment,
         )
 
@@ -1101,6 +1122,8 @@ class PrinterUpdate(BaseModel):
     max_power: float | None = Field(None)
     connectivity: str | None = Field(None)
     sku: str | None = Field(None, max_length=128)
+    ams_location: str | None = Field(None, max_length=64)
+    ams_slot_order: str | None = Field(None, max_length=1024)
     comment: str | None = Field(None, max_length=1024)
 
 
@@ -1114,3 +1137,39 @@ class TagScanEvent(Event):
 
     payload: TagScan = Field(description="The scan.")
     resource: Literal["tag_scan"] = Field(description="Resource type.")
+
+
+class PrinterCalibration(BaseModel):
+    id: int = Field(description="Unique internal ID of this calibration record.")
+    registered: SpoolmanDateTime = Field(description="When the calibration was registered. UTC Timezone.")
+    printer: Printer = Field(description="The printer this VFA test was done for.")
+    vfa_speed_min: float | None = Field(None, description="Lower bound of the problematic speed range in mm/s.")
+    vfa_speed_max: float | None = Field(None, description="Upper bound of the problematic speed range in mm/s.")
+    images: list[CalibrationImage] = Field(default_factory=list, description="Evidence images.")
+    notes: str | None = Field(None, max_length=1024, description="Free-text notes.")
+
+    @staticmethod
+    def from_db(item: models.PrinterCalibration) -> "PrinterCalibration":
+        """Create a new Pydantic PrinterCalibration object from a database object."""
+        return PrinterCalibration(
+            id=item.id,
+            registered=item.registered,
+            printer=Printer.from_db(item.printer),
+            vfa_speed_min=item.vfa_speed_min,
+            vfa_speed_max=item.vfa_speed_max,
+            images=[CalibrationImage.from_db(img) for img in item.images],
+            notes=item.notes,
+        )
+
+
+class PrinterCalibrationCreate(BaseModel):
+    printer_id: int = Field(description="The printer this VFA test was done for.")
+    vfa_speed_min: float | None = Field(None)
+    vfa_speed_max: float | None = Field(None)
+    notes: str | None = Field(None, max_length=1024)
+
+
+class PrinterCalibrationUpdate(BaseModel):
+    vfa_speed_min: float | None = Field(None)
+    vfa_speed_max: float | None = Field(None)
+    notes: str | None = Field(None, max_length=1024)

@@ -5,6 +5,8 @@ import { App, Button, Card, Col, Image, Row, Typography } from "antd";
 import { Stat, TagList } from "../../components/stat";
 import { getAPIURL } from "../../utils/url";
 import { IPrinter } from "./model";
+import PrinterAmsSection from "./amsSection";
+import PrinterVfaSection from "./vfaSection";
 
 const { Text } = Typography;
 
@@ -222,6 +224,14 @@ export const PrinterShow = () => {
                 </Card>
               </Col>
             )}
+
+            <Col xs={24}>
+              <PrinterAmsSection printer={record} />
+            </Col>
+
+            <Col xs={24}>
+              <PrinterVfaSection printerId={record?.id} />
+            </Col>
 
             {record?.comment && (
               <Col xs={24}>

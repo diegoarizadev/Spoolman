@@ -26,6 +26,7 @@ from . import (
     models,
     other,
     printer,
+    printer_calibration,
     purge,
     search,
     setting,
@@ -136,5 +137,6 @@ app.include_router(export.router)
 app.include_router(purge.router)
 app.include_router(filament_calibration.router)
 app.include_router(printer.router)
+app.include_router(printer_calibration.router)
 app.include_router(search.router)
 app.include_router(tag.router)

@@ -1,8 +1,6 @@
 import {
-  CameraOutlined,
   DeleteOutlined,
   EditOutlined,
-  InboxOutlined,
   InfoCircleOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
@@ -15,7 +13,6 @@ import {
   Col,
   Empty,
   Form,
-  Image,
   Input,
   InputNumber,
   Modal,
@@ -23,15 +20,12 @@ import {
   Select,
   Space,
   Tooltip,
-  Upload,
 } from "antd";
 import { useEffect, useMemo, useState } from "react";
-import CameraCaptureModal from "../../components/cameraCaptureModal";
+import { CalibrationImageStrip, CalibrationImagesField, saveCalibrationImages } from "../../components/calibrationImages";
 import { Stat } from "../../components/stat";
 import { getAPIURL } from "../../utils/url";
 import { CALIBRATION_TYPES, CalibrationTypeConfig, IFilamentCalibration, getCalibrationTypeConfig } from "./calibrationModel";
-
-const { Dragger } = Upload;
 
 async function fetchCalibrations(filamentId: number): Promise<IFilamentCalibration[]> {
   const response = await fetch(`${getAPIURL()}/filament-calibration?filament_id=${filamentId}`);
@@ -94,9 +88,8 @@ function CalibrationFormModal({
   const isEdit = state?.mode === "edit";
   const [createType, setCreateType] = useState("");
   const calibrationType = state ? (isEdit ? state.record.calibration_type : createType) : "";
-  const [fileList, setFileList] = useState<File[]>([]);
-  const [cameraOpen, setCameraOpen] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [pending, setPending] = useState<File[]>([]);
+  const [removedIds, setRemovedIds] = useState<number[]>([]);
 
   const config = getCalibrationTypeConfig(calibrationType);
 
@@ -106,21 +99,18 @@ function CalibrationFormModal({
     }
     if (isEdit) {
       form.setFieldsValue(state.record);
-      setPreviewUrl(
-        state.record.image_path ? `${getAPIURL()}/filament-calibration/${state.record.id}/image` : null,
-      );
     } else {
       form.resetFields();
       setCreateType(state.type);
-      setPreviewUrl(null);
     }
-    setFileList([]);
+    setPending([]);
+    setRemovedIds([]);
   }, [state, isEdit, form]);
 
   const resetAndClose = () => {
     form.resetFields();
-    setFileList([]);
-    setPreviewUrl(null);
+    setPending([]);
+    setRemovedIds([]);
     onClose();
   };
 
@@ -136,10 +126,8 @@ function CalibrationFormModal({
         calibrationId = createResponse.data?.id;
       }
 
-      if (calibrationId && fileList.length > 0) {
-        const formData = new FormData();
-        formData.append("file", fileList[0]);
-        await axiosInstance.post(`${getAPIURL()}/filament-calibration/${calibrationId}/image`, formData);
+      if (calibrationId) {
+        await saveCalibrationImages("filament-calibration", calibrationId, removedIds, pending);
       }
     },
     onSuccess: () => {
@@ -180,75 +168,23 @@ function CalibrationFormModal({
           </Form.Item>
         ))}
 
-        <Form.Item label="Imagen de evidencia">
-          {previewUrl ? (
-            <div style={{ position: "relative", display: "inline-block" }}>
-              <img
-                src={previewUrl}
-                alt="preview"
-                style={{ maxWidth: "100%", maxHeight: 200, borderRadius: 8, display: "block" }}
-              />
-              <Button
-                danger
-                size="small"
-                icon={<DeleteOutlined />}
-                style={{ position: "absolute", top: 4, right: 4 }}
-                onClick={() => {
-                  setPreviewUrl(null);
-                  setFileList([]);
-                }}
-              />
-            </div>
-          ) : (
-            <Dragger
-              multiple={false}
-              onRemove={() => setFileList([])}
-              beforeUpload={(file) => {
-                setFileList([file]);
-                return false;
-              }}
-            >
-              <p className="ant-upload-drag-icon">
-                <InboxOutlined />
-              </p>
-              <p className="ant-upload-text">Hacé clic o arrastrá la imagen a esta área</p>
-            </Dragger>
-          )}
-          <Space style={{ marginTop: 8 }}>
-            <Button icon={<CameraOutlined />} onClick={() => setCameraOpen(true)}>
-              Tomar foto
-            </Button>
-          </Space>
+        <Form.Item label="Imágenes de evidencia">
+          <CalibrationImagesField
+            resource="filament-calibration"
+            calibrationId={isEdit ? state.record.id : undefined}
+            existing={isEdit ? (state.record.images ?? []) : []}
+            removedIds={removedIds}
+            pending={pending}
+            onRemoveExisting={(id) => setRemovedIds((prev) => [...prev, id])}
+            onPendingChange={setPending}
+          />
         </Form.Item>
-        <CameraCaptureModal
-          open={cameraOpen}
-          onCapture={(file) => {
-            setFileList([file]);
-            setPreviewUrl(URL.createObjectURL(file));
-            setCameraOpen(false);
-          }}
-          onCancel={() => setCameraOpen(false)}
-        />
 
         <Form.Item label="Notas" name="notes">
           <Input.TextArea placeholder="Opcional" maxLength={1024} />
         </Form.Item>
       </Form>
     </Modal>
-  );
-}
-
-function CalibrationThumbnail({ calibration }: { calibration: IFilamentCalibration }) {
-  if (!calibration.image_path) {
-    return null;
-  }
-  return (
-    <Image
-      src={`${getAPIURL()}/filament-calibration/${calibration.id}/image`}
-      width={48}
-      height={48}
-      style={{ objectFit: "cover", borderRadius: 4 }}
-    />
   );
 }
 
@@ -336,7 +272,7 @@ export function CalibrationsSection({ filamentId }: { filamentId?: number }) {
                           borderBottom: "1px solid rgba(255,255,255,0.08)",
                         }}
                       >
-                        <CalibrationThumbnail calibration={record} />
+                        <CalibrationImageStrip resource="filament-calibration" calibrationId={record.id} images={record.images} />
                         <div style={{ flex: 1 }}>
                           <Stat label={new Date(record.registered).toLocaleDateString()} value={formatValue(record)} />
                           {record.notes && <div style={{ fontSize: 12, opacity: 0.7 }}>{record.notes}</div>}
