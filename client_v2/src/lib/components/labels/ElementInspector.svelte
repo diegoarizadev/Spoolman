@@ -237,6 +237,18 @@
 					onchange={(v) => update({ radius: v })}
 				/></label
 			>
+			{#if kind === 'purge'}
+				<label
+					>{m['labels.swatchColorFrom']()}
+					<select
+						value={el.side ?? 'from'}
+						onchange={(e) => update({ side: e.currentTarget.value === 'to' ? 'to' : 'from' })}
+					>
+						<option value="from">{m['labels.swatchFrom']()}</option>
+						<option value="to">{m['labels.swatchTo']()}</option>
+					</select></label
+				>
+			{/if}
 			<p class="hint">{m['labels.hintSwatch']()}</p>
 		{:else if el.type === 'rect'}
 			<div class="row2">

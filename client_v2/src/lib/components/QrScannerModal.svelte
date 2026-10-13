@@ -70,12 +70,13 @@
 	}
 
 	// A scanned code that decodes to a Spoolman spool or filament opens it in the
-	// Library. Non-Spoolman codes are ignored so the camera keeps scanning.
+	// Library, and a purge opens in the purge library. Non-Spoolman codes are
+	// ignored so the camera keeps scanning.
 	function onDecode(result: QrScanner.ScanResult) {
 		const ref = parseSpoolCode(result.data);
 		if (ref === null) return;
 		close();
-		goto(resolve(`/?sel=${ref.kind}:${ref.id}`));
+		goto(resolve(ref.kind === 'purge' ? `/purge?view=${ref.id}` : `/?sel=${ref.kind}:${ref.id}`));
 	}
 
 	/** Map a getUserMedia DOMException to a friendly reason (by its `name`). */

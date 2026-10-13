@@ -5,8 +5,8 @@ import { resolveTemplate, type LabelBinding } from './template';
 // QR content + geometry. The QR encodes a link back to the label's subject — a
 // spool for spool labels, a filament for filament labels. The first two forms are
 // understood by Spoolman's scanner ($lib/utils/spoolCode.ts):
-//   scheme → WEB+SPOOLMAN:S-<id> / F-<id>              (compact custom URI)
-//   url    → <base_url>/spool/show/<id> or /filament/show/<id>  (opens in a browser)
+//   scheme → WEB+SPOOLMAN:S-<id> / F-<id> / P-<id>     (compact custom URI)
+//   url    → <base_url>/spool|filament|purge/show/<id> (opens in a browser)
 //   custom → the element's urlTemplate                 (user-supplied, {id} and
 //            label fields like {filament.id} substituted)
 // A custom target is meant for a third-party app or host and won't scan back
@@ -14,7 +14,7 @@ import { resolveTemplate, type LabelBinding } from './template';
 
 export interface QrContext {
 	baseUrl: string;
-	/** Whether the {id} refers to a spool or a filament. Defaults to `spool`. */
+	/** Whether the {id} refers to a spool, filament or purge. Defaults to `spool`. */
 	kind?: LabelKind;
 }
 
@@ -55,13 +55,13 @@ function webRoot(ctx: QrContext): string {
 	const root = ctx.baseUrl || (typeof window !== 'undefined' ? window.location.origin : '');
 	return root.replace(/\/$/, '');
 }
-/** Route segment for the browser link: `spool` or `filament`. */
-function showPath(ctx: QrContext): 'spool' | 'filament' {
-	return ctx.kind === 'filament' ? 'filament' : 'spool';
+/** Route segment for the browser link: `spool`, `filament` or `purge`. */
+function showPath(ctx: QrContext): 'spool' | 'filament' | 'purge' {
+	return ctx.kind === 'filament' || ctx.kind === 'purge' ? ctx.kind : 'spool';
 }
-/** Compact-scheme entity prefix: `S` for spools, `F` for filaments. */
-function schemePrefix(ctx: QrContext): 'S' | 'F' {
-	return ctx.kind === 'filament' ? 'F' : 'S';
+/** Compact-scheme entity prefix: `S` for spools, `F` for filaments, `P` for purges. */
+function schemePrefix(ctx: QrContext): 'S' | 'F' | 'P' {
+	return ctx.kind === 'filament' ? 'F' : ctx.kind === 'purge' ? 'P' : 'S';
 }
 
 /** A square boolean module grid for the given text. */

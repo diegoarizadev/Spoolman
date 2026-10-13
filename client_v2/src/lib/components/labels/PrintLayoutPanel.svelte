@@ -11,6 +11,8 @@
 	import { EXPORT_FORMATS, resolveExportFormat } from '$lib/labels/export';
 	import { spoolSource } from '$lib/api/spoolSource';
 	import { searchAll } from '$lib/api/search';
+	import { listPurges, purgeFilamentLabel, type PurgeCalibration } from '$lib/api/purge';
+	import { purgeBinding } from '$lib/labels/purgeBinding';
 	import { isAbortError } from '$lib/api/http';
 	import { inventory } from '$lib/stores/inventory.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -20,8 +22,10 @@
 	interface Props {
 		design: LabelDesign;
 		preselected?: number[];
+		/** Purge ids to pre-select on a purge label design. */
+		preselectedPurges?: number[];
 	}
-	let { design = $bindable(), preselected = [] }: Props = $props();
+	let { design = $bindable(), preselected = [], preselectedPurges = [] }: Props = $props();
 
 	// Whether we're picking spools or filaments to print. Spool labels bind to a
 	// spool (+ its filament/vendor); filament labels bind directly to a filament.
@@ -92,6 +96,8 @@
 	});
 
 	$effect(() => {
+		// Purge labels pick from the purge list below, not from spools or filaments.
+		if (kind === 'purge') return;
 		const ctrl = new AbortController();
 		void loadPage(kind, dir, (pageNo - 1) * pageSize, pageSize, ctrl.signal);
 		return () => ctrl.abort();
@@ -165,7 +171,7 @@
 	$effect(() => {
 		const searchKind = kind;
 		const q = (searchKind === 'filament' ? fSearch : search).trim();
-		if (!q) {
+		if (!q || searchKind === 'purge') {
 			resultIds = null;
 			resultFIds = null;
 			searching = false;
@@ -270,6 +276,50 @@
 		return { spool: s, filament, vendor };
 	}
 
+	// --- Purge selection (purge labels) -------------------------------------------
+	// The purge library is small, so the whole list is loaded and searched locally.
+	let purges = $state<PurgeCalibration[]>([]);
+	let selectedP = $state<Set<number>>(new Set(untrack(() => preselectedPurges)));
+	let pSearch = $state('');
+	let pLoading = $state(false);
+
+	$effect(() => {
+		if (kind !== 'purge') return;
+		const ctrl = new AbortController();
+		pLoading = true;
+		listPurges({ sort: 'id:desc' }, ctrl.signal)
+			.then((page) => (purges = page.items))
+			.catch((e) => {
+				if (!isAbortError(e, ctrl.signal)) console.error('Failed to load purges for printing', e);
+			})
+			.finally(() => {
+				if (!ctrl.signal.aborted) pLoading = false;
+			});
+		return () => ctrl.abort();
+	});
+
+	function purgeText(p: PurgeCalibration): string {
+		return `#${p.id} · ${purgeFilamentLabel(p.from_filament)} → ${purgeFilamentLabel(p.to_filament)} · ${p.purge_volume.toFixed(1)} mm³ · ${p.nozzle_size} mm`;
+	}
+	const visiblePurges = $derived.by(() => {
+		const q = pSearch.trim().toLowerCase();
+		const list = q ? purges.filter((p) => purgeText(p).toLowerCase().includes(q)) : purges;
+		return [...list].sort((a, b) => (sort === 'newest' ? b.id - a.id : a.id - b.id));
+	});
+	function toggleP(id: number) {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- transient local; `selectedP` updates via reassignment below
+		const next = new Set(selectedP);
+		if (next.has(id)) next.delete(id);
+		else next.add(id);
+		selectedP = next;
+	}
+	function selectAllP() {
+		selectedP = new Set([...selectedP, ...visiblePurges.map((p) => p.id)]);
+	}
+	function clearAllP() {
+		selectedP = new Set();
+	}
+
 	// --- Filament selection (filament labels) ------------------------------------
 	let selectedF = $state<Set<string>>(new Set());
 	let fSearch = $state('');
@@ -304,19 +354,27 @@
 	// The active binding set drives the preview and the print/save actions; it
 	// switches source with the label kind.
 	const bindings = $derived<LabelBinding[]>(
-		kind === 'filament'
-			? [...selectedF]
-					.map((id) => inventory.filamentById(id))
-					.filter((f): f is Filament => !!f)
-					.map((f) => ({ filament: f, vendor: inventory.vendorById(f.vendorId) }))
-			: [...selected]
-					.map((id) => inventory.spoolById(id))
-					.filter((s): s is Spool => !!s)
-					.map(bindingFor)
+		kind === 'purge'
+			? purges.filter((p) => selectedP.has(p.id)).map(purgeBinding)
+			: kind === 'filament'
+				? [...selectedF]
+						.map((id) => inventory.filamentById(id))
+						.filter((f): f is Filament => !!f)
+						.map((f) => ({ filament: f, vendor: inventory.vendorById(f.vendorId) }))
+				: [...selected]
+						.map((id) => inventory.spoolById(id))
+						.filter((s): s is Spool => !!s)
+						.map(bindingFor)
 	);
 
 	// Preview caption: the id of the first selected subject, labelled by kind.
-	const previewId = $derived(kind === 'filament' ? bindings[0]?.filament?.id : bindings[0]?.spool?.id);
+	const previewId = $derived(
+		kind === 'purge'
+			? bindings[0]?.purge?.id
+			: kind === 'filament'
+				? bindings[0]?.filament?.id
+				: bindings[0]?.spool?.id
+	);
 
 	const grid = $derived(sheetGrid(layout, design.label));
 
@@ -386,7 +444,34 @@
 
 <div class="print-panel">
 	<div class="col spools">
-		{#if kind === 'filament'}
+		{#if kind === 'purge'}
+			<div class="col-head">
+				<span>{m['nav.purge']()}</span>
+				<div class="mini-actions">
+					<button onclick={selectAllP} disabled={pLoading}>{m['labels.selectAllShort']()}</button>
+					<button onclick={clearAllP}>{m['labels.selectNoneShort']()}</button>
+				</div>
+			</div>
+			<div class="search-row">
+				<input class="search" placeholder={m['labels.searchPurges']()} bind:value={pSearch} />
+				{@render sortControls()}
+			</div>
+			<div class="spool-list" bind:this={listEl}>
+				{#if pLoading}
+					<div class="muted">{m.loading()}…</div>
+				{:else if visiblePurges.length === 0}
+					<div class="muted">{m['labels.noPurges']()}</div>
+				{:else}
+					{#each visiblePurges as p (p.id)}
+						<label class="spool-item">
+							<input type="checkbox" checked={selectedP.has(p.id)} onchange={() => toggleP(p.id)} />
+							<span class="lbl">{purgeText(p)}</span>
+						</label>
+					{/each}
+				{/if}
+			</div>
+			<div class="count">{m['labels.purgesSelected']({ count: selectedP.size })}</div>
+		{:else if kind === 'filament'}
 			<div class="col-head">
 				<span>{m['filament.filament']()}</span>
 				<div class="mini-actions">
@@ -446,7 +531,7 @@
 			</div>
 			<div class="count">{m['printing.spoolSelect.selectedTotal']({ count: selected.size })}</div>
 		{/if}
-		{#if !(kind === 'filament' ? resultFIds : resultIds) && total > pageSize}
+		{#if kind !== 'purge' && !(kind === 'filament' ? resultFIds : resultIds) && total > pageSize}
 			<Pagination
 				page={pageNo}
 				{pageSize}
@@ -718,11 +803,17 @@
 			<div class="muted small">
 				{kind === 'filament'
 					? m['labels.showingFilament']({ id: previewId ?? '' })
-					: m['labels.showingSpool']({ id: previewId ?? '' })}
+					: kind === 'purge'
+						? m['labels.showingPurge']({ id: previewId ?? '' })
+						: m['labels.showingSpool']({ id: previewId ?? '' })}
 			</div>
 		{:else}
 			<div class="muted">
-				{kind === 'filament' ? m['labels.selectAtLeastOneFilament']() : m['labels.selectAtLeastOne']()}
+				{kind === 'filament'
+					? m['labels.selectAtLeastOneFilament']()
+					: kind === 'purge'
+						? m['labels.selectAtLeastOnePurge']()
+						: m['labels.selectAtLeastOne']()}
 			</div>
 		{/if}
 		<div class="print-btn">

@@ -15,11 +15,28 @@ import * as m from '$lib/paraglide/messages';
 //   **bold**                     → markers stripped (block-level bold is a text
 //                                  element property; inline bold isn't rendered)
 
+/** One purge-library entry as a label sees it: the purge plus its incoming filament. */
+export interface PurgeBinding {
+	id: number;
+	volume: number;
+	factor: number;
+	nozzle: number;
+	temp: number;
+	comment?: string;
+	registeredLabel?: string;
+	/** The incoming filament and its manufacturer. The outgoing pair is the binding's own. */
+	to?: Filament;
+	toVendor?: Vendor;
+}
+
 export interface LabelBinding {
 	/** Absent on filament labels, which have no spool. Spool resolvers then omit. */
 	spool?: Spool;
+	/** On purge labels this is the outgoing filament. */
 	filament?: Filament;
 	vendor?: Vendor;
+	/** Present on purge labels only. */
+	purge?: PurgeBinding;
 }
 
 /** Sentinel returned for an absent value; drives conditional-block omission. */
@@ -64,6 +81,18 @@ const RESOLVERS: Record<string, (b: LabelBinding) => string | number | null | un
 	'filament.registered': (b) => b.filament?.registeredLabel,
 	// Vendor fields are reachable both nested under filament (v1 style) and directly.
 	'filament.vendor.name': (b) => b.vendor?.name,
+
+	'purge.id': (b) => b.purge?.id,
+	'purge.volume': (b) => fmtNum(b.purge?.volume),
+	'purge.factor': (b) => (b.purge && b.purge.factor > 0 ? fmtNum(b.purge.factor) : null),
+	'purge.nozzle': (b) => fmtNum(b.purge?.nozzle),
+	'purge.temp': (b) => fmtNum(b.purge?.temp),
+	'purge.comment': (b) => b.purge?.comment,
+	'purge.registered': (b) => b.purge?.registeredLabel,
+	'purge.to.name': (b) => b.purge?.to?.name,
+	'purge.to.material': (b) => b.purge?.to?.material,
+	'purge.to.vendor': (b) => b.purge?.toVendor?.name,
+	'purge.to.color': (b) => b.purge?.to?.colors[0],
 
 	'vendor.name': (b) => b.vendor?.name,
 	'vendor.emptyWeight': (b) => fmtNum(b.vendor?.emptyWeight),
@@ -136,12 +165,30 @@ export interface PlaceholderItem {
 	label?: string;
 }
 export interface PlaceholderGroup {
-	entity: EntityType;
+	/** The entity the group's extra fields belong to; purges have none. */
+	entity: EntityType | 'purge';
 	labelKey: () => string;
 	items: PlaceholderItem[];
 }
 
 const FIXED_GROUPS: PlaceholderGroup[] = [
+	{
+		entity: 'purge',
+		labelKey: m['labels.fields.groupPurge'],
+		items: [
+			{ token: 'purge.id', labelKey: m['purge.fields.id'] },
+			{ token: 'purge.volume', labelKey: m['labels.fields.purgeVolumeMm3'] },
+			{ token: 'purge.factor', labelKey: m['purge.fields.factor'] },
+			{ token: 'purge.nozzle', labelKey: m['labels.fields.purgeNozzleMm'] },
+			{ token: 'purge.temp', labelKey: m['purge.fields.temp'] },
+			{ token: 'purge.comment', labelKey: m['purge.fields.comment'] },
+			{ token: 'purge.registered', labelKey: m['purge.fields.registered'] },
+			{ token: 'purge.to.name', labelKey: m['labels.fields.purgeToName'] },
+			{ token: 'purge.to.material', labelKey: m['labels.fields.purgeToMaterial'] },
+			{ token: 'purge.to.vendor', labelKey: m['labels.fields.purgeToVendor'] },
+			{ token: 'purge.to.color', labelKey: m['labels.fields.purgeToColor'] }
+		]
+	},
 	{
 		entity: 'spool',
 		labelKey: m['library.section.spool'],
@@ -200,14 +247,18 @@ const FIXED_GROUPS: PlaceholderGroup[] = [
  * user-defined field's own name).
  *
  * `kind` drops the groups that don't apply: a filament label has no spool, so its
- * spool fields are omitted from the palette.
+ * spool fields are omitted from the palette, and only a purge label has purge fields.
  */
 export function getPlaceholderGroups(
 	extraFields: Record<EntityType, FieldDef[]>,
 	kind: LabelKind = 'spool'
 ): PlaceholderGroup[] {
-	return FIXED_GROUPS.filter((group) => kind !== 'filament' || group.entity !== 'spool').map((group) => {
-		const extra = (extraFields[group.entity] ?? []).map((f) => ({
+	return FIXED_GROUPS.filter((group) => {
+		if (group.entity === 'spool') return kind === 'spool';
+		if (group.entity === 'purge') return kind === 'purge';
+		return true;
+	}).map((group) => {
+		const extra = (group.entity === 'purge' ? [] : (extraFields[group.entity] ?? [])).map((f) => ({
 			token: `${group.entity}.extra.${f.key}`,
 			label: f.name
 		}));

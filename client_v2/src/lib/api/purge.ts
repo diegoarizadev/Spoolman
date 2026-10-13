@@ -1,5 +1,5 @@
 import { API_BASE } from './config';
-import { deleteResource, getList, patchJson, postJson, type QueryParams } from './http';
+import { deleteResource, getJson, getList, patchJson, postJson, type QueryParams } from './http';
 import { getSettings, parseSetting } from './settings';
 
 // Purge library (/api/v1/purge): how much filament to purge when going from one
@@ -8,10 +8,12 @@ import { getSettings, parseSetting } from './settings';
 export interface PurgeVendor {
 	id: number;
 	name: string;
+	[key: string]: unknown;
 }
 
 export interface PurgeFilament {
 	id: number;
+	[key: string]: unknown;
 	name?: string;
 	material?: string;
 	color_hex?: string;
@@ -61,6 +63,8 @@ export async function listPurges(
 	return { items: page.items as PurgeCalibration[], total: page.total };
 }
 
+export const getPurge = (id: number, signal?: AbortSignal) =>
+	getJson<PurgeCalibration>(`/purge/${id}`, {}, signal);
 export const createPurge = (body: PurgeInput) => postJson<PurgeCalibration>('/purge', body);
 export const updatePurge = (id: number, body: Partial<PurgeInput>) =>
 	patchJson<PurgeCalibration>(`/purge/${id}`, body);

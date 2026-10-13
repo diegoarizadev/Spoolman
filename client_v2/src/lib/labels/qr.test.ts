@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { qrContent } from './qr';
+import { qrContent, qrTemplate } from './qr';
 import type { QrElement } from './types';
 import type { LabelBinding } from './template';
 
@@ -25,5 +25,22 @@ describe('qrContent custom template', () => {
 
 	it('still substitutes {id} without a binding', () => {
 		expect(qrContent(qr('x/{id}'), 7, { baseUrl: '' })).toBe('x/7');
+	});
+});
+
+describe('qrContent for purge labels', () => {
+	const el = (encoding: QrElement['encoding']): QrElement => ({ ...qr(''), encoding });
+
+	it('uses the P prefix in the compact scheme', () => {
+		expect(qrContent(el('scheme'), 5, { baseUrl: '', kind: 'purge' })).toBe('WEB+SPOOLMAN:P-5');
+	});
+
+	it('links to the purge page in the url form', () => {
+		expect(qrContent(el('url'), 5, { baseUrl: 'http://host/', kind: 'purge' })).toBe(
+			'http://host/purge/show/5'
+		);
+		expect(qrTemplate(el('url'), { baseUrl: 'http://host', kind: 'purge' })).toBe(
+			'http://host/purge/show/{id}'
+		);
 	});
 });

@@ -7,6 +7,8 @@
 	import { fields } from '$lib/stores/fields.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { spoolSource } from '$lib/api/spoolSource';
+	import { listPurges, purgeFilamentLabel, type PurgeCalibration } from '$lib/api/purge';
+	import { purgeBinding } from '$lib/labels/purgeBinding';
 	import { inventory } from '$lib/stores/inventory.svelte';
 	import type { Spool, Filament } from '$lib/types';
 	import * as m from '$lib/paraglide/messages';
@@ -35,7 +37,17 @@
 		void kind;
 		previewId = '';
 	});
+	let previewPurgeList = $state<PurgeCalibration[]>([]);
 	$effect(() => {
+		if (kind === 'purge') {
+			const ctrl = new AbortController();
+			listPurges({ sort: 'id:asc' }, ctrl.signal)
+				.then((p) => (previewPurgeList = p.items))
+				.catch((e) => {
+					if (!ctrl.signal.aborted) console.error('Failed to load purges for preview', e);
+				});
+			return () => ctrl.abort();
+		}
 		if (kind === 'filament') {
 			if (inventory.filaments.length === 0) {
 				spoolSource.listFilaments().catch((e) => console.error('Failed to load filaments for preview', e));
@@ -65,6 +77,10 @@
 	}
 	const previewBinding = $derived.by<LabelBinding | undefined>(() => {
 		if (previewId === '') return undefined;
+		if (kind === 'purge') {
+			const p = previewPurgeList.find((x) => String(x.id) === previewId);
+			return p ? purgeBinding(p) : undefined;
+		}
 		if (kind === 'filament') {
 			const filament = inventory.filamentById(previewId);
 			if (!filament) return undefined;
@@ -213,7 +229,13 @@
 				onchange={(e) => (previewId = e.currentTarget.value)}
 			>
 				<option value="">{m['labels.sampleData']()}</option>
-				{#if kind === 'filament'}
+				{#if kind === 'purge'}
+					{#each previewPurgeList as p (p.id)}
+						<option value={String(p.id)}
+							>#{p.id} · {purgeFilamentLabel(p.from_filament)} → {purgeFilamentLabel(p.to_filament)}</option
+						>
+					{/each}
+				{:else if kind === 'filament'}
 					{#each previewFilaments as f (f.id)}
 						<option value={f.id}>{filamentLabel(f)}</option>
 					{/each}

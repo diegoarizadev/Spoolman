@@ -5,7 +5,7 @@
 	import LabelDesigner from '$components/labels/LabelDesigner.svelte';
 	import PrintLayoutPanel from '$components/labels/PrintLayoutPanel.svelte';
 	import { labelDesigns } from '$lib/stores/labelDesigns.svelte';
-	import { setDesignKind, type LabelDesign } from '$lib/labels/types';
+	import { labelKind, setDesignKind, type LabelDesign } from '$lib/labels/types';
 	import * as m from '$lib/paraglide/messages';
 	import Plus from '@lucide/svelte/icons/plus';
 
@@ -17,10 +17,20 @@
 			.filter((n) => Number.isFinite(n))
 	);
 
+	// Purge ids to pre-select (e.g. /labels?purges=3,4), which also picks a purge design.
+	const preselectedPurges = $derived(
+		($page.url.searchParams.get('purges') ?? '')
+			.split(',')
+			.map((s) => parseInt(s, 10))
+			.filter((n) => Number.isFinite(n))
+	);
+
 	let selectedId = $state<string | null>(null);
 	let working = $state<LabelDesign | null>(null);
 	// Deep-linking with ?spools=… lands straight on the Print tab.
-	let tab = $state<'design' | 'print'>(untrack(() => preselected).length > 0 ? 'print' : 'design');
+	let tab = $state<'design' | 'print'>(
+		untrack(() => preselected).length + untrack(() => preselectedPurges).length > 0 ? 'print' : 'design'
+	);
 	let saving = $state(false);
 	let savedSnapshot = $state('');
 
@@ -34,8 +44,19 @@
 	});
 
 	$effect(() => {
-		void labelDesigns.load().then(() => {
-			if (selectedId === null && labelDesigns.designs.length > 0) {
+		void labelDesigns.load().then(async () => {
+			if (selectedId !== null) return;
+			if (untrack(() => preselectedPurges).length > 0) {
+				// Printing purge labels needs a purge design: use the first one, or make one.
+				let design = labelDesigns.designs.find((d) => labelKind(d) === 'purge');
+				if (!design) {
+					design = clone(await labelDesigns.create());
+					setDesignKind(design, 'purge');
+					design.name = m['labels.purgeDesignName']();
+					await labelDesigns.save(design);
+				}
+				selectDesign(design.id);
+			} else if (labelDesigns.designs.length > 0) {
 				selectDesign(labelDesigns.designs[0].id);
 			}
 		});
@@ -139,6 +160,10 @@
 						class:active={working.kind === 'filament'}
 						onclick={() => working && setDesignKind(working, 'filament')}>{m['labels.typeFilament']()}</button
 					>
+					<button
+						class:active={working.kind === 'purge'}
+						onclick={() => working && setDesignKind(working, 'purge')}>{m['labels.typePurge']()}</button
+					>
 				</div>
 				<span class="type-hint">{m['labels.typeHint']()}</span>
 			</div>
@@ -159,7 +184,7 @@
 			{/if}
 			{#if visitedPrint}
 				<div class:hidden={tab !== 'print'}>
-					<PrintLayoutPanel design={working} {preselected} />
+					<PrintLayoutPanel design={working} {preselected} {preselectedPurges} />
 				</div>
 			{/if}
 		{:else}

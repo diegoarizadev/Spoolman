@@ -11,9 +11,12 @@ export type ElementType = 'qr' | 'text' | 'swatch' | 'rect';
  * What real-world entity a design labels. A `spool` label binds to a single spool
  * (and its filament/vendor); a `filament` label binds to a filament (and its
  * vendor) with no spool — spool-only fields are dropped and its QR links to the
- * filament instead of a spool. Defaults to `spool` when absent on older designs.
+ * filament instead of a spool. A `purge` label binds to one purge-library entry:
+ * `{filament.*}` and `{vendor.*}` resolve to its outgoing filament, `{purge.*}` to the
+ * purge itself and the incoming filament, and its QR links to the purge. Defaults to
+ * `spool` when absent on older designs.
  */
-export type LabelKind = 'spool' | 'filament';
+export type LabelKind = 'spool' | 'filament' | 'purge';
 
 /** Fields common to every element: an id and a top-left position in mm. */
 interface BaseElement {
@@ -78,6 +81,11 @@ export interface SwatchElement extends BaseElement {
 	h: number;
 	/** Corner radius in mm. */
 	radius: number;
+	/**
+	 * Purge labels only: which filament of the purge to take the colour from, the
+	 * outgoing one (`from`, the default) or the incoming one (`to`).
+	 */
+	side?: 'from' | 'to';
 }
 
 /** A static rectangle / border for decoration (no per-spool data). */
@@ -197,6 +205,16 @@ export const DEFAULT_SPOOL_TEXT = '{{filament.material} · }#{spool.id}';
 /** Same line for a fresh filament label — a spool id makes no sense here, so it
  * ends in the filament id instead. */
 export const DEFAULT_FILAMENT_TEXT = '{{filament.material} · }#{filament.id}';
+/** Same line for a fresh purge label: the purge volume and nozzle (the id is in the QR). */
+export const DEFAULT_PURGE_TEXT = '{purge.volume} mm³ · {purge.nozzle} mm';
+/** A purge label's headline names both filaments: where it purges from and to. */
+export const DEFAULT_PURGE_NAME = '{filament.name} → {purge.to.name}';
+/**
+ * Two filament names don't fit the headline's usual size on a small label, so a
+ * purge label's headline is set smaller than a spool's (and put back on the way out).
+ */
+const HEADLINE_FONT = 3.2;
+const PURGE_HEADLINE_FONT = 2.4;
 
 /**
  * Spool/filament template pairs that count as "still the default", newest first.
@@ -205,16 +223,55 @@ export const DEFAULT_FILAMENT_TEXT = '{{filament.material} · }#{filament.id}';
  * retargeted when their kind is switched.
  */
 const DEFAULT_TEXT_PAIRS: Record<LabelKind, string>[] = [
-	{ spool: DEFAULT_SPOOL_TEXT, filament: DEFAULT_FILAMENT_TEXT },
+	{ spool: DEFAULT_SPOOL_TEXT, filament: DEFAULT_FILAMENT_TEXT, purge: DEFAULT_PURGE_TEXT },
+	// The headline: the outgoing filament's name, which is also the purge label's
+	// first half, so only the purge kind adds the incoming filament.
+	{ spool: '{filament.name}', filament: '{filament.name}', purge: DEFAULT_PURGE_NAME },
 	{
 		spool: '**{filament.name}**\n{filament.material}\n#{spool.id}',
-		filament: '**{filament.name}**\n{filament.material}\n#{filament.id}'
+		filament: '**{filament.name}**\n{filament.material}\n#{filament.id}',
+		purge: '**{filament.name}**\n{filament.material}\n#{purge.id}'
 	}
 ];
 
 /** The default text-block template for a given label kind. */
 export function defaultTextTemplate(kind: LabelKind): string {
-	return kind === 'filament' ? DEFAULT_FILAMENT_TEXT : DEFAULT_SPOOL_TEXT;
+	if (kind === 'filament') return DEFAULT_FILAMENT_TEXT;
+	return kind === 'purge' ? DEFAULT_PURGE_TEXT : DEFAULT_SPOOL_TEXT;
+}
+
+/** Gap in mm between the two halves of a swatch that a purge label splits in two. */
+const PURGE_SWATCH_GAP = 1;
+
+/** Id of the incoming-colour half created when a swatch is split for a purge label. */
+const toSwatchId = (id: string) => `${id}-to`;
+
+/** Split every plain swatch into an outgoing half and an incoming half. */
+function splitSwatches(elements: LabelElement[]): LabelElement[] {
+	return elements.flatMap<LabelElement>((el) => {
+		if (el.type !== 'swatch' || el.side) return [el];
+		const w = (el.w - PURGE_SWATCH_GAP) / 2;
+		return [
+			{ ...el, w, side: 'from' as const },
+			{ ...el, id: toSwatchId(el.id), x: el.x + w + PURGE_SWATCH_GAP, w, side: 'to' as const }
+		];
+	});
+}
+
+/** Undo {@link splitSwatches}: fold each pair back into one swatch spanning both. */
+function mergeSwatches(elements: LabelElement[]): LabelElement[] {
+	const byId = new Map(elements.map((el) => [el.id, el]));
+	return elements.flatMap<LabelElement>((el) => {
+		if (el.type !== 'swatch') return [el];
+		if (el.side === 'to' && el.id.endsWith('-to') && byId.has(el.id.slice(0, -3))) return [];
+		const { side, ...plain } = el;
+		void side;
+		const partner = byId.get(toSwatchId(el.id));
+		if (el.side === 'from' && partner?.type === 'swatch') {
+			return [{ ...plain, w: partner.x + partner.w - el.x }];
+		}
+		return [plain];
+	});
 }
 
 /**
@@ -230,8 +287,17 @@ export function setDesignKind(design: LabelDesign, kind: LabelKind): void {
 	design.elements = design.elements.map((el) => {
 		if (el.type !== 'text') return el;
 		const pair = DEFAULT_TEXT_PAIRS.find((p) => p[from] === el.template);
-		return pair ? { ...el, template: pair[kind] } : el;
+		if (!pair) return el;
+		const next = { ...el, template: pair[kind] };
+		if (pair[kind] === DEFAULT_PURGE_NAME && el.fontSize === HEADLINE_FONT)
+			next.fontSize = PURGE_HEADLINE_FONT;
+		else if (pair[from] === DEFAULT_PURGE_NAME && el.fontSize === PURGE_HEADLINE_FONT)
+			next.fontSize = HEADLINE_FONT;
+		return next;
 	});
+	// A purge label shows both colours; any other kind shows one.
+	if (kind === 'purge') design.elements = splitSwatches(design.elements);
+	else if (from === 'purge') design.elements = mergeSwatches(design.elements);
 }
 
 /**

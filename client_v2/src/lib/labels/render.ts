@@ -84,8 +84,13 @@ export function elementToShape(el: LabelElement, ctx: RenderContext): ShapeSpec 
 	switch (el.type) {
 		case 'qr': {
 			const qrCtx = { baseUrl: ctx.baseUrl, kind: ctx.kind };
-			// The QR's subject is the spool (spool labels) or filament (filament labels).
-			const subjectId = ctx.kind === 'filament' ? ctx.binding?.filament?.id : ctx.binding?.spool?.id;
+			// The QR's subject is the spool, filament or purge the label is for.
+			const subjectId =
+				ctx.kind === 'filament'
+					? ctx.binding?.filament?.id
+					: ctx.kind === 'purge'
+						? ctx.binding?.purge?.id
+						: ctx.binding?.spool?.id;
 			// With no bound subject (editor canvas), preview the template with id 0 so
 			// the QR's module density matches what will actually print for this
 			// encoding — a long URL/custom target is denser than the compact scheme.
@@ -134,7 +139,10 @@ export function elementToShape(el: LabelElement, ctx: RenderContext): ShapeSpec 
 			};
 		}
 		case 'swatch': {
-			const colors = ctx.binding?.filament?.colors ?? [];
+			// A purge label's swatch can show the incoming filament instead of the outgoing one.
+			const filament =
+				el.side === 'to' && ctx.kind === 'purge' ? ctx.binding?.purge?.to : ctx.binding?.filament;
+			const colors = filament?.colors ?? [];
 			return { kind: 'rect', config: swatchConfig(el.x, el.y, el.w, el.h, el.radius, colors) };
 		}
 		case 'rect': {

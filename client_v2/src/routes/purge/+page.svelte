@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { SvelteMap } from 'svelte/reactivity';
+	import { goto } from '$app/navigation';
+	import { page as pageState } from '$app/state';
+	import { resolve } from '$app/paths';
 	import Button from '$components/Button.svelte';
 	import Card from '$components/Card.svelte';
 	import ConfirmDialog from '$components/ConfirmDialog.svelte';
@@ -10,6 +13,7 @@
 	import PurgeMatrix from '$components/purge/PurgeMatrix.svelte';
 	import {
 		deletePurge,
+		getPurge,
 		listFilamentsForPurge,
 		listPurges,
 		loadPurgeSettings,
@@ -23,6 +27,7 @@
 	import { toasts } from '$lib/stores/toasts.svelte';
 	import * as m from '$lib/paraglide/messages';
 	import Plus from '@lucide/svelte/icons/plus';
+	import Printer from '@lucide/svelte/icons/printer';
 	import Eye from '@lucide/svelte/icons/eye';
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
@@ -118,6 +123,23 @@
 			});
 		return () => ctrl.abort();
 	});
+
+	// A scanned or printed label lands here as `?view=<id>`: open that purge's details.
+	$effect(() => {
+		const id = Number(pageState.url.searchParams.get('view'));
+		if (!Number.isInteger(id) || id <= 0) return;
+		const ctrl = new AbortController();
+		getPurge(id, ctrl.signal)
+			.then((p) => (viewing = p))
+			.catch(() => {
+				if (!ctrl.signal.aborted) toasts.show('error', m['purge.loadFailed']());
+			});
+		return () => ctrl.abort();
+	});
+
+	function printLabels(ids: number[]) {
+		void goto(resolve(`/labels?purges=${ids.join(',')}`));
+	}
 
 	function sortBy(field: string) {
 		if (sortField === field) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
@@ -258,6 +280,13 @@
 				<span class="count">{m['purge.selected']({ count: selectedCount })}</span>
 				<Button variant="ghost" onclick={() => (selected = {})}>{m['buttons.clear']()}</Button>
 			{/if}
+			<Button
+				variant="outline"
+				disabled={selectedCount < 1}
+				onclick={() => printLabels(Object.keys(selected).map(Number))}
+			>
+				<Printer size={14} />{m['purge.printLabels']()}
+			</Button>
 			<Button variant="outline" disabled={selectedCount < 1} onclick={openMatrix}>
 				<FlaskConical size={14} />{m['purge.matrix.open']()}
 			</Button>
@@ -339,6 +368,13 @@
 								</td>
 								<td class="comment">{row.comment ?? ''}</td>
 								<td class="actions">
+									<Button
+										variant="ghost"
+										ariaLabel={m['purge.printLabel']()}
+										onclick={() => printLabels([row.id])}
+									>
+										<Printer size={14} />
+									</Button>
 									<Button
 										variant="ghost"
 										ariaLabel={m['purge.actions.view']()}
