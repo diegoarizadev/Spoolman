@@ -1,4 +1,4 @@
-import { ExperimentOutlined, FileOutlined, HighlightOutlined, PlusOutlined, UnorderedListOutlined, UserOutlined } from "@ant-design/icons";
+import { ExperimentOutlined, FileOutlined, HighlightOutlined, PlusOutlined, PrinterOutlined, UnorderedListOutlined, UserOutlined } from "@ant-design/icons";
 import { useList, useTranslate } from "@refinedev/core";
 import { Card, Col, Row, Statistic, theme } from "antd";
 import { Content } from "antd/es/layout/layout";
@@ -10,6 +10,7 @@ import { Trans } from "react-i18next";
 import { Link } from "react-router";
 import Logo from "../../icon.svg?react";
 import { ISpool } from "../spools/model";
+import { AmsPurgeOverview } from "./amsPurgeOverview";
 
 dayjs.extend(utc);
 
@@ -31,6 +32,10 @@ export const Home = () => {
     resource: "vendor",
     pagination: { pageSize: 1 },
   });
+  const printers = useList<ISpool>({
+    resource: "printer",
+    pagination: { pageSize: 1 },
+  });
   const purges = useList<ISpool>({
     resource: "purge",
     pagination: { pageSize: 1 },
@@ -38,7 +43,7 @@ export const Home = () => {
 
   const hasSpools = !spools.result || spools.result.data.length > 0;
 
-  const ResourceStatsCard = (props: { loading: boolean; value: number; resource: string; icon: ReactNode }) => (
+  const ResourceStatsCard = (props: { loading: boolean; value: number; resource: string; icon: ReactNode; title?: string }) => (
     <Col xs={12} md={6}>
       <Card
         loading={props.loading}
@@ -51,7 +56,7 @@ export const Home = () => {
           </Link>,
         ]}
       >
-        <Statistic title={t(`${props.resource}.${props.resource}`)} value={props.value} prefix={props.icon} />
+        <Statistic title={props.title ?? t(`${props.resource}.${props.resource}`)} value={props.value} prefix={props.icon} />
       </Card>
     </Col>
   );
@@ -110,12 +115,20 @@ export const Home = () => {
           icon={<UserOutlined />}
         />
         <ResourceStatsCard
+          resource="printer"
+          title="Impresoras"
+          value={printers.result?.total || 0}
+          loading={printers.query.isLoading}
+          icon={<PrinterOutlined />}
+        />
+        <ResourceStatsCard
           resource="purge"
           value={purges.result?.total || 0}
           loading={purges.query.isLoading}
           icon={<ExperimentOutlined />}
         />
       </Row>
+      <AmsPurgeOverview />
       {!hasSpools && (
         <>
           <p style={{ marginTop: 32 }}>{t("home.welcome")}</p>

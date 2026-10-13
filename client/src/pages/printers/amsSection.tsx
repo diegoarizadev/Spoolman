@@ -18,7 +18,7 @@ async function fetchLocations(): Promise<string[]> {
   return response.json();
 }
 
-async function fetchSpoolsAt(location: string): Promise<ISpool[]> {
+export async function fetchSpoolsAt(location: string): Promise<ISpool[]> {
   const response = await fetch(`${getAPIURL()}/spool?location=${encodeURIComponent(location)}`);
   if (!response.ok) {
     throw new Error(`Failed to fetch spools: ${response.status}`);
@@ -28,7 +28,7 @@ async function fetchSpoolsAt(location: string): Promise<ISpool[]> {
   return spools.filter((s) => s.location === location);
 }
 
-function parseOrder(raw?: string): number[] {
+export function parseOrder(raw?: string): number[] {
   try {
     const parsed = JSON.parse(raw ?? "[]");
     return Array.isArray(parsed) ? parsed.filter((n) => typeof n === "number") : [];
@@ -38,14 +38,14 @@ function parseOrder(raw?: string): number[] {
 }
 
 /** Saved order first (dropping spools no longer there), then any new spools in the location. */
-function applyOrder(spools: ISpool[], order: number[]): ISpool[] {
+export function applyOrder(spools: ISpool[], order: number[]): ISpool[] {
   const byId = new Map(spools.map((s) => [s.id, s]));
   const ordered = order.map((id) => byId.get(id)).filter((s): s is ISpool => Boolean(s));
   const seen = new Set(ordered.map((s) => s.id));
   return [...ordered, ...spools.filter((s) => !seen.has(s.id))];
 }
 
-function textColorFor(hex?: string): string {
+export function textColorFor(hex?: string): string {
   if (!hex || hex.length < 6) {
     return "#fff";
   }
@@ -141,7 +141,7 @@ export function PrinterAmsSection({ printer }: { printer?: IPrinter }) {
       ) : (
         <>
           <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 8 }}>
-            {location} · arrastrá una bobina sobre otra para reordenar · clic para ver el filamento
+            {location} · arrastrá una bobina sobre otra para reordenar · clic para ver la bobina
           </Text>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 12 }}>
             {slots.map((spool, index) => {
@@ -158,8 +158,8 @@ export function PrinterAmsSection({ printer }: { printer?: IPrinter }) {
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={() => drop(index)}
                     onDragEnd={() => setDragFrom(null)}
-                    onClick={() => show("filament", spool.filament.id)}
-                    title="Ver detalle del filamento"
+                    onClick={() => show("spool", spool.id)}
+                    title="Ver detalle de la bobina"
                     style={{
                       cursor: "grab",
                       background: hex ? `#${hex}` : "#888",

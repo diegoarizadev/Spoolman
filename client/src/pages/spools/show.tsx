@@ -1,10 +1,10 @@
 import { InboxOutlined, PrinterOutlined, ToTopOutlined, ToolOutlined } from "@ant-design/icons";
 import { DateField, NumberField, Show, TextField } from "@refinedev/antd";
-import { useInvalidate, useShow, useTranslate } from "@refinedev/core";
-import { Button, Modal, Typography } from "antd";
+import { useInvalidate, useNavigation, useShow, useTranslate } from "@refinedev/core";
+import { Button, Card, Col, Modal, Row, Typography } from "antd";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
-import { ExtraFieldDisplay } from "../../components/extraFields";
+import { ExtraFieldDisplay, ParsedExtras } from "../../components/extraFields";
 import { NumberFieldUnit } from "../../components/numberField";
 import SpoolIcon from "../../components/spoolIcon";
 import { enrichText } from "../../utils/parsing";
@@ -13,6 +13,8 @@ import { useCurrencyFormatter } from "../../utils/settings";
 import { getBasePath } from "../../utils/url";
 import { IFilament } from "../filaments/model";
 import { setSpoolArchived, useSpoolAdjustModal } from "./functions";
+import { CalibrationsSection } from "../filaments/calibrationsSection";
+import { MaterialDefaultsCard } from "../filaments/materialDefaultsCard";
 import { ISpool } from "./model";
 
 dayjs.extend(utc);
@@ -23,6 +25,8 @@ const { confirm } = Modal;
 export const SpoolShow = () => {
   const t = useTranslate();
   const extraFields = useGetFields(EntityType.spool);
+  const filamentExtraFields = useGetFields(EntityType.filament);
+  const { show } = useNavigation();
   const currencyFormatter = useCurrencyFormatter();
   const invalidate = useInvalidate();
 
@@ -32,6 +36,8 @@ export const SpoolShow = () => {
   const { data, isLoading } = query;
 
   const record = data?.data;
+  const parsedTipo = record ? ParsedExtras(record.filament).extra?.tipo : undefined;
+  const tipo = typeof parsedTipo === "string" ? parsedTipo : undefined;
 
   const spoolPrice = (item?: ISpool) => {
     const price = item?.price ?? item?.filament.price;
@@ -223,6 +229,36 @@ export const SpoolShow = () => {
       {extraFields?.data?.map((field, index) => (
         <ExtraFieldDisplay key={index} field={field} value={record?.extra[field.key]} />
       ))}
+
+      {record && (
+        <div style={{ marginTop: 32 }}>
+          <Row justify="space-between" align="middle" style={{ marginBottom: 12 }}>
+            <Col>
+              <Title level={4} style={{ margin: 0 }}>
+                Información del filamento
+              </Title>
+            </Col>
+            <Col>
+              <Button onClick={() => show("filament", record.filament.id)}>Ver / editar filamento</Button>
+            </Col>
+          </Row>
+
+          {(filamentExtraFields?.data?.length ?? 0) > 0 && (
+            <Card size="small" title="Campos adicionales del filamento" style={{ marginBottom: 16 }}>
+              <Row gutter={[16, 12]}>
+                {filamentExtraFields?.data?.map((field, index) => (
+                  <Col xs={24} sm={12} md={8} key={index}>
+                    <ExtraFieldDisplay field={field} value={record.filament.extra?.[field.key]} />
+                  </Col>
+                ))}
+              </Row>
+            </Card>
+          )}
+
+          <MaterialDefaultsCard vendor={record.filament.vendor?.name} material={record.filament.material} type={tipo} />
+          <CalibrationsSection filamentId={record.filament.id} readOnly />
+        </div>
+      )}
     </Show>
   );
 };

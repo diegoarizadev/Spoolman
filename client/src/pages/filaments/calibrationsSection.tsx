@@ -188,7 +188,7 @@ function CalibrationFormModal({
   );
 }
 
-export function CalibrationsSection({ filamentId }: { filamentId?: number }) {
+export function CalibrationsSection({ filamentId, readOnly = false }: { filamentId?: number; readOnly?: boolean }) {
   const { message, modal } = App.useApp();
   const queryClient = useQueryClient();
   const [modalState, setModalState] = useState<ModalState>(null);
@@ -245,12 +245,14 @@ export function CalibrationsSection({ filamentId }: { filamentId?: number }) {
                   </span>
                 }
                 extra={
+                  readOnly ? undefined : (
                   <Button
                     type="text"
                     size="small"
                     icon={<PlusOutlined />}
                     onClick={() => setModalState({ mode: "create", type: config.type })}
                   />
+                  )
                 }
               >
                 {records.length === 0 ? (
@@ -277,6 +279,8 @@ export function CalibrationsSection({ filamentId }: { filamentId?: number }) {
                           <Stat label={new Date(record.registered).toLocaleDateString()} value={formatValue(record)} />
                           {record.notes && <div style={{ fontSize: 12, opacity: 0.7 }}>{record.notes}</div>}
                         </div>
+                        {!readOnly && (
+                          <>
                         <Button
                           type="text"
                           size="small"
@@ -298,6 +302,8 @@ export function CalibrationsSection({ filamentId }: { filamentId?: number }) {
                             })
                           }
                         />
+                          </>
+                        )}
                       </div>
                     ))}
                   </Space>
@@ -308,7 +314,9 @@ export function CalibrationsSection({ filamentId }: { filamentId?: number }) {
         })}
       </Row>
 
-      <CalibrationFormModal filamentId={filamentId} state={modalState} onClose={() => setModalState(null)} />
+      {!readOnly && (
+        <CalibrationFormModal filamentId={filamentId} state={modalState} onClose={() => setModalState(null)} />
+      )}
     </div>
   );
 }
