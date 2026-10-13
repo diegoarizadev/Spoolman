@@ -55,7 +55,7 @@
 	let rows = $state<PurgeCalibration[]>([]);
 	let total = $state(0);
 	let page = $state(1);
-	let pageSize = $state(25);
+	let pageSize = $state(20);
 	let sortField = $state('id');
 	let sortDir = $state<'asc' | 'desc'>('asc');
 	let fromFilter = $state(0);
@@ -206,157 +206,164 @@
 	];
 </script>
 
-<div class="wrap">
-	<h1 class="title">{m['nav.purge']()}</h1>
-	<p class="subtitle">{m['purge.subtitle']()}</p>
+<div class="page scroll-y">
+	<div class="wrap">
+		<h1 class="title">{m['nav.purge']()}</h1>
+		<p class="subtitle">{m['purge.subtitle']()}</p>
 
-	<Card>
-		<div class="resources">
-			<div class="rhead">{m['purge.resources.title']()}</div>
-			<p class="rintro">{m['purge.resources.intro']()}</p>
-			<div class="rlinks">
-				{#each RESOURCES as r (r.href)}
-					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external links -->
-					<Button variant="outline" href={r.href}>
-						{#if r.video}<PlayCircle size={14} />{:else}<ExternalLink size={14} />{/if}
-						{r.label}
-					</Button>
-				{/each}
+		<Card>
+			<div class="resources">
+				<div class="rhead">{m['purge.resources.title']()}</div>
+				<p class="rintro">{m['purge.resources.intro']()}</p>
+				<div class="rlinks">
+					{#each RESOURCES as r (r.href)}
+						<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external links -->
+						<Button variant="outline" href={r.href}>
+							{#if r.video}<PlayCircle size={14} />{:else}<ExternalLink size={14} />{/if}
+							{r.label}
+						</Button>
+					{/each}
+				</div>
 			</div>
+		</Card>
+
+		<div class="toolbar">
+			<select
+				class="sel"
+				bind:value={fromFilter}
+				onchange={() => (page = 1)}
+				aria-label={m['purge.fields.from']()}
+			>
+				<option value={0}>{m['purge.fields.from']()}: {m['purge.all']()}</option>
+				{#each filaments as f (f.id)}
+					<option value={f.id}>{purgeFilamentLabel(f)}</option>
+				{/each}
+			</select>
+			<select
+				class="sel"
+				bind:value={toFilter}
+				onchange={() => (page = 1)}
+				aria-label={m['purge.fields.to']()}
+			>
+				<option value={0}>{m['purge.fields.to']()}: {m['purge.all']()}</option>
+				{#each filaments as f (f.id)}
+					<option value={f.id}>{purgeFilamentLabel(f)}</option>
+				{/each}
+			</select>
+			<span class="spacer"></span>
+			{#if selectedCount > 0}
+				<span class="count">{m['purge.selected']({ count: selectedCount })}</span>
+				<Button variant="ghost" onclick={() => (selected = {})}>{m['buttons.clear']()}</Button>
+			{/if}
+			<Button variant="outline" disabled={selectedCount < 1} onclick={openMatrix}>
+				<FlaskConical size={14} />{m['purge.matrix.open']()}
+			</Button>
+			<Button onclick={() => openNew()}><Plus size={14} />{m['purge.new']()}</Button>
 		</div>
-	</Card>
 
-	<div class="toolbar">
-		<select
-			class="sel"
-			bind:value={fromFilter}
-			onchange={() => (page = 1)}
-			aria-label={m['purge.fields.from']()}
-		>
-			<option value={0}>{m['purge.fields.from']()}: {m['purge.all']()}</option>
-			{#each filaments as f (f.id)}
-				<option value={f.id}>{purgeFilamentLabel(f)}</option>
-			{/each}
-		</select>
-		<select class="sel" bind:value={toFilter} onchange={() => (page = 1)} aria-label={m['purge.fields.to']()}>
-			<option value={0}>{m['purge.fields.to']()}: {m['purge.all']()}</option>
-			{#each filaments as f (f.id)}
-				<option value={f.id}>{purgeFilamentLabel(f)}</option>
-			{/each}
-		</select>
-		<span class="spacer"></span>
-		{#if selectedCount > 0}
-			<span class="count">{m['purge.selected']({ count: selectedCount })}</span>
-			<Button variant="ghost" onclick={() => (selected = {})}>{m['buttons.clear']()}</Button>
-		{/if}
-		<Button variant="outline" disabled={selectedCount < 1} onclick={openMatrix}>
-			<FlaskConical size={14} />{m['purge.matrix.open']()}
-		</Button>
-		<Button onclick={() => openNew()}><Plus size={14} />{m['purge.new']()}</Button>
-	</div>
-
-	{#if failed}
-		<p class="warn">{m['purge.loadFailed']()}</p>
-	{:else if !loading && rows.length === 0}
-		<p class="empty">{m['purge.empty']()}</p>
-	{:else}
-		<div class="tablewrap">
-			<table>
-				<thead>
-					<tr>
-						<th class="chk">
-							<input
-								type="checkbox"
-								checked={allOnPage}
-								onchange={togglePage}
-								aria-label={m['purge.selectPage']()}
-							/>
-						</th>
-						{#each columns as c (c.field)}
-							<th>
-								<button class="sort" onclick={() => sortBy(c.field)}>
-									{c.label()}
-									{#if sortField === c.field}
-										{#if sortDir === 'asc'}<ArrowUp size={11} />{:else}<ArrowDown size={11} />{/if}
-									{/if}
-								</button>
-							</th>
-						{/each}
-						<th>{m['purge.fields.photo']()}</th>
-						<th>{m['purge.fields.comment']()}</th>
-						<th></th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each rows as row (row.id)}
-						<tr class:sel-row={!!selected[row.id]}>
-							<td class="chk">
+		{#if failed}
+			<p class="warn">{m['purge.loadFailed']()}</p>
+		{:else if !loading && rows.length === 0}
+			<p class="empty">{m['purge.empty']()}</p>
+		{:else}
+			<div class="tablewrap">
+				<table>
+					<thead>
+						<tr>
+							<th class="chk">
 								<input
 									type="checkbox"
-									checked={!!selected[row.id]}
-									onchange={() => toggle(row)}
-									aria-label={`#${row.id}`}
+									checked={allOnPage}
+									onchange={togglePage}
+									aria-label={m['purge.selectPage']()}
 								/>
-							</td>
-							<td>
-								<span class="fil"
-									><Swatch colors={colorsOf(row.from_filament)} size={14} radius={7} />{purgeFilamentLabel(
-										row.from_filament
-									)}</span
-								>
-							</td>
-							<td>
-								<span class="fil"
-									><Swatch colors={colorsOf(row.to_filament)} size={14} radius={7} />{purgeFilamentLabel(
-										row.to_filament
-									)}</span
-								>
-							</td>
-							<td class="num">{row.purge_volume.toFixed(1)} mm³</td>
-							<td class="num">{row.nozzle_size} mm</td>
-							<td class="num">{row.print_temp} °C</td>
-							<td class="num"
-								>{row.multiplication_factor > 0 && row.multiplication_factor !== 1
-									? `×${row.multiplication_factor}`
-									: '—'}</td
-							>
-							<td>
-								{#if row.image_path}
-									<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- API_BASE already carries the deploy base path -->
-									<a href={purgeImageUrl(row.id)} target="_blank" rel="noopener noreferrer">
-										<img class="thumb" src={purgeImageUrl(row.id)} alt="" loading="lazy" />
-									</a>
-								{/if}
-							</td>
-							<td class="comment">{row.comment ?? ''}</td>
-							<td class="actions">
-								<Button variant="ghost" ariaLabel={m['buttons.edit']()} onclick={() => openEdit(row)}>
-									<Pencil size={14} />
-								</Button>
-								<Button
-									variant="danger-ghost"
-									ariaLabel={m['buttons.delete']()}
-									onclick={() => (toDelete = row)}
-								>
-									<Trash2 size={14} />
-								</Button>
-							</td>
+							</th>
+							{#each columns as c (c.field)}
+								<th>
+									<button class="sort" onclick={() => sortBy(c.field)}>
+										{c.label()}
+										{#if sortField === c.field}
+											{#if sortDir === 'asc'}<ArrowUp size={11} />{:else}<ArrowDown size={11} />{/if}
+										{/if}
+									</button>
+								</th>
+							{/each}
+							<th>{m['purge.fields.photo']()}</th>
+							<th>{m['purge.fields.comment']()}</th>
+							<th></th>
 						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</div>
-		<Pagination
-			{page}
-			{pageSize}
-			{total}
-			onpage={(p) => (page = p)}
-			onpagesize={(s) => {
-				pageSize = s;
-				page = 1;
-			}}
-		/>
-	{/if}
+					</thead>
+					<tbody>
+						{#each rows as row (row.id)}
+							<tr class:sel-row={!!selected[row.id]}>
+								<td class="chk">
+									<input
+										type="checkbox"
+										checked={!!selected[row.id]}
+										onchange={() => toggle(row)}
+										aria-label={`#${row.id}`}
+									/>
+								</td>
+								<td>
+									<span class="fil"
+										><Swatch colors={colorsOf(row.from_filament)} size={14} radius={7} />{purgeFilamentLabel(
+											row.from_filament
+										)}</span
+									>
+								</td>
+								<td>
+									<span class="fil"
+										><Swatch colors={colorsOf(row.to_filament)} size={14} radius={7} />{purgeFilamentLabel(
+											row.to_filament
+										)}</span
+									>
+								</td>
+								<td class="num">{row.purge_volume.toFixed(1)} mm³</td>
+								<td class="num">{row.nozzle_size} mm</td>
+								<td class="num">{row.print_temp} °C</td>
+								<td class="num"
+									>{row.multiplication_factor > 0 && row.multiplication_factor !== 1
+										? `×${row.multiplication_factor}`
+										: '—'}</td
+								>
+								<td>
+									{#if row.image_path}
+										<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- API_BASE already carries the deploy base path -->
+										<a href={purgeImageUrl(row.id)} target="_blank" rel="noopener noreferrer">
+											<img class="thumb" src={purgeImageUrl(row.id)} alt="" loading="lazy" />
+										</a>
+									{/if}
+								</td>
+								<td class="comment">{row.comment ?? ''}</td>
+								<td class="actions">
+									<Button variant="ghost" ariaLabel={m['buttons.edit']()} onclick={() => openEdit(row)}>
+										<Pencil size={14} />
+									</Button>
+									<Button
+										variant="danger-ghost"
+										ariaLabel={m['buttons.delete']()}
+										onclick={() => (toDelete = row)}
+									>
+										<Trash2 size={14} />
+									</Button>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+			<Pagination
+				{page}
+				{pageSize}
+				{total}
+				onpage={(p) => (page = p)}
+				onpagesize={(s) => {
+					pageSize = s;
+					page = 1;
+				}}
+			/>
+		{/if}
+	</div>
 </div>
 
 <PurgeForm
@@ -402,6 +409,10 @@
 />
 
 <style>
+	.page {
+		flex: 1;
+		min-height: 0;
+	}
 	.wrap {
 		max-width: 1180px;
 		margin: 0 auto;
