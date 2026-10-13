@@ -6,6 +6,7 @@
 	import Pagination from '$components/Pagination.svelte';
 	import Swatch from '$components/Swatch.svelte';
 	import PurgeForm from '$components/purge/PurgeForm.svelte';
+	import PurgeDetail from '$components/purge/PurgeDetail.svelte';
 	import PurgeMatrix from '$components/purge/PurgeMatrix.svelte';
 	import {
 		deletePurge,
@@ -22,6 +23,7 @@
 	import { toasts } from '$lib/stores/toasts.svelte';
 	import * as m from '$lib/paraglide/messages';
 	import Plus from '@lucide/svelte/icons/plus';
+	import Eye from '@lucide/svelte/icons/eye';
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import FlaskConical from '@lucide/svelte/icons/flask-conical';
@@ -74,6 +76,7 @@
 	let prefill = $state<{ from?: number; to?: number; nozzle?: number } | undefined>();
 	let matrixOpen = $state(false);
 	let matrixFilaments = $state<PurgeFilament[]>([]);
+	let viewing = $state<PurgeCalibration | undefined>();
 	let toDelete = $state<PurgeCalibration | undefined>();
 	let deleting = $state(false);
 
@@ -336,6 +339,13 @@
 								</td>
 								<td class="comment">{row.comment ?? ''}</td>
 								<td class="actions">
+									<Button
+										variant="ghost"
+										ariaLabel={m['purge.actions.view']()}
+										onclick={() => (viewing = row)}
+									>
+										<Eye size={14} />
+									</Button>
 									<Button variant="ghost" ariaLabel={m['buttons.edit']()} onclick={() => openEdit(row)}>
 										<Pencil size={14} />
 									</Button>
@@ -376,6 +386,15 @@
 	onsaved={() => revision++}
 />
 
+<PurgeDetail
+	purge={viewing}
+	onclose={() => (viewing = undefined)}
+	onedit={(p) => {
+		viewing = undefined;
+		openEdit(p);
+	}}
+/>
+
 <PurgeMatrix
 	open={matrixOpen}
 	filaments={matrixFilaments}
@@ -387,7 +406,7 @@
 	}}
 	onshow={(p) => {
 		matrixOpen = false;
-		openEdit(p);
+		viewing = p;
 	}}
 />
 
