@@ -1,7 +1,7 @@
-import { DeleteOutlined, EditOutlined, ExperimentOutlined, EyeOutlined, FilterOutlined, PrinterOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, LinkOutlined, PlayCircleOutlined, ExperimentOutlined, EyeOutlined, FilterOutlined, PrinterOutlined } from "@ant-design/icons";
 import { CreateButton, List, useTable } from "@refinedev/antd";
 import { HttpError, useDelete, useInvalidate, useNavigation, useTranslate } from "@refinedev/core";
-import { Button, Popconfirm, Table, message } from "antd";
+import { Button, Card, Popconfirm, Space, Table, Typography, message } from "antd";
 import dayjs from "dayjs";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
@@ -252,6 +252,37 @@ export const PurgeList = () => {
                 </>
             )}
         >
+            <Card size="small" title="Recursos para la prueba de purga" style={{ marginBottom: 16 }}>
+                <Typography.Paragraph type="secondary" style={{ marginBottom: 8 }}>
+                    Modelos para imprimir la prueba que sirve para calcular el volumen de purga, y un video que explica cómo hacerla.
+                </Typography.Paragraph>
+                <Space wrap>
+                    <Button
+                        icon={<LinkOutlined />}
+                        href="https://makerworld.com/en/models/112380-ams-purge-calibration-v2#profileId-129748"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        AMS Purge Calibration V2
+                    </Button>
+                    <Button
+                        icon={<LinkOutlined />}
+                        href="https://makerworld.com/en/models/54909-ams-purge-calibration#profileId-56456"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        AMS Purge Calibration
+                    </Button>
+                    <Button
+                        icon={<PlayCircleOutlined />}
+                        href="https://www.youtube.com/watch?v=FP3CwBX6A4I"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Video explicativo
+                    </Button>
+                </Space>
+            </Card>
             <Table<IPurgeCollapsed>
                 {...(tableProps as any)}
                 rowSelection={rowSelection}

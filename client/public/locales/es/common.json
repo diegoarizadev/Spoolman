@@ -411,7 +411,7 @@
         "no_locations_help": "Esta página te permite organizar tus carretes en ubicaciones, ¡añade algunos carretes para empezar!"
     },
     "purge": {
-        "purge": "Calibraciones de Purga",
+        "purge": "Librería de Purgas",
         "titles": {
             "list": "Librería de Purgas",
             "create": "Registrar Calibración de Purga"
