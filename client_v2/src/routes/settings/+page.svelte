@@ -4,6 +4,7 @@
 	import SettingRow from '$components/settings/SettingRow.svelte';
 	import ExtraFieldsManager from '$components/settings/ExtraFieldsManager.svelte';
 	import ScannerSettings from '$components/settings/ScannerSettings.svelte';
+	import PurgeSettings from '$components/settings/PurgeSettings.svelte';
 	import ArrowRight from '@lucide/svelte/icons/arrow-right';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { theme, type ThemePref } from '$lib/stores/theme.svelte';
@@ -159,6 +160,9 @@
 				<span class="unit">g</span>
 			</SettingRow>
 		</Card>
+
+		<div class="sec-label">{m['settings.purge.tab']()}</div>
+		<PurgeSettings />
 
 		<div class="sec-label">{m['settings.scanner.tab']()}</div>
 		<div class="subtitle sub2">
