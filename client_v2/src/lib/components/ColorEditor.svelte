@@ -1,10 +1,12 @@
 <script lang="ts">
 	import Plus from '@lucide/svelte/icons/plus';
 	import X from '@lucide/svelte/icons/x';
+	import Camera from '@lucide/svelte/icons/camera';
 	import type { MultiColorDirection } from '$lib/types';
 	import * as m from '$lib/paraglide/messages';
 	import { ALPHA_CHECKER, alphaOf, normalizeHex, withAlpha } from '$lib/utils/color';
 	import NumberInput from './NumberInput.svelte';
+	import ColorFromPhoto from './ColorFromPhoto.svelte';
 
 	// Editor for a filament's colour(s): a single colour, or a multi-colour list
 	// with a coaxial/longitudinal direction. Each colour also carries an opacity,
@@ -79,6 +81,13 @@
 		emit();
 	}
 
+	// The row whose colour is being read from a photo, or null when the dialog is closed.
+	let photoRow = $state<number | null>(null);
+	function pickFromPhoto(hex: string) {
+		if (photoRow !== null) pick(photoRow, '#' + hex);
+		photoRow = null;
+	}
+
 	// Opacity is expressed as a percentage in the UI but lives in the hex code's
 	// alpha byte; a partial or empty row has no alpha to speak of and reads as
 	// fully opaque.
@@ -148,6 +157,13 @@
 						placeholder="hex"
 						maxlength="9"
 					/>
+					<button
+						class="rm"
+						type="button"
+						onclick={() => (photoRow = i)}
+						title={m['colorPhoto.fromPhoto']()}
+						aria-label={m['colorPhoto.fromPhoto']()}><Camera size={14} /></button
+					>
 					{#if multi}
 						<button
 							class="rm"
@@ -259,6 +275,8 @@
 		<p class="dir-help">{m['filament.fieldsHelp.multiColorDirection']()}</p>
 	{/if}
 </div>
+
+<ColorFromPhoto open={photoRow !== null} onpick={pickFromPhoto} onclose={() => (photoRow = null)} />
 
 <style>
 	.ce {
