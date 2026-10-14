@@ -48,7 +48,14 @@ export type PrinterInput = Partial<Omit<Printer, 'id' | 'registered' | 'image_pa
 export interface AmsSpool {
 	id: number;
 	location?: string;
-	filament: { id: number; name?: string; material?: string; color_hex?: string };
+	filament: {
+		id: number;
+		name?: string;
+		material?: string;
+		color_hex?: string;
+		multi_color_hexes?: string;
+		vendor?: { id: number; name: string };
+	};
 }
 
 export async function listPrinters(

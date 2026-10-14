@@ -3,6 +3,7 @@
 	import Button from '$components/Button.svelte';
 	import ConfirmDialog from '$components/ConfirmDialog.svelte';
 	import Pagination from '$components/Pagination.svelte';
+	import PrinterAmsCards from '$components/printers/PrinterAmsCards.svelte';
 	import PrinterDetail from '$components/printers/PrinterDetail.svelte';
 	import PrinterForm from '$components/printers/PrinterForm.svelte';
 	import {
@@ -129,6 +130,8 @@
 	<div class="wrap">
 		<h1 class="title">{m['nav.printers']()}</h1>
 		<p class="subtitle">{m['printers.subtitle']()}</p>
+
+		<PrinterAmsCards {revision} />
 
 		<div class="toolbar">
 			<span class="spacer"></span>

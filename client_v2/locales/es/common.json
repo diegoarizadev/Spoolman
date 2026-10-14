@@ -454,6 +454,7 @@
     "printers.vfa.deleteTitle": "Eliminar prueba VFA",
     "printers.vfa.deleteLine": "Se eliminará esta prueba VFA y sus fotos.",
     "printers.vfa.deleteFailed": "No se pudo eliminar la prueba VFA",
+    "printers.ams.needTwo": "se necesitan al menos 2 filamentos distintos",
     "no": "No",
     "notifications.error": "Error (status code: {{statusCode}})",
     "notifications.saveSuccessful": "¡Se guardo correctamente!",
