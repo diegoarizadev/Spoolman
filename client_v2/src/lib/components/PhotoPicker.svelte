@@ -6,6 +6,7 @@
 	import ImageCropper from './ImageCropper.svelte';
 	import Button from './Button.svelte';
 	import { lightbox } from '$lib/stores/lightbox.svelte';
+	import { downscale } from '$lib/utils/image';
 	import * as m from '$lib/paraglide/messages';
 
 	// Photos for a record: pick files, drop them on the area, or take one with the
@@ -55,8 +56,9 @@
 		else add(chosen);
 	}
 
-	function add(chosen: File[]) {
-		files = multiple ? [...files, ...chosen] : chosen.slice(-1);
+	async function add(chosen: File[]) {
+		const small = await Promise.all(chosen.map((f) => downscale(f)));
+		files = multiple ? [...files, ...small] : small.slice(-1);
 	}
 
 	function cropped(file: File) {

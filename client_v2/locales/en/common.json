@@ -558,6 +558,7 @@
     "printers.ams.needTwo": "at least 2 different filaments are needed",
     "printers.fields.name": "Name / alias",
     "printers.fields.namePlaceholder": "e.g. Workshop A1",
+    "printers.photoFailed": "The printer was saved, but the photo could not be uploaded. Try again.",
     "calibration.type.temperature": "Temperature",
     "calibration.desc.temperature": "Prints a tower with blocks at different temperatures and judges which gives the best result (less stringing, better layer adhesion, cleaner overhangs). Record the temperature of the winning block.",
     "calibration.type.pressureAdvance": "Pressure Advance",

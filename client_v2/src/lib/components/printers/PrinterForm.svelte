@@ -146,7 +146,16 @@
 		for (const k of TEXT_KEYS) out[k] = texts[k].trim() || null;
 		try {
 			let saved = editing ? await updatePrinter(editing.id, body) : await createPrinter(body);
-			if (photos[0]) saved = await uploadPrinterImage(saved.id, photos[0]);
+			if (photos[0]) {
+				try {
+					saved = await uploadPrinterImage(saved.id, photos[0]);
+				} catch {
+					// The data is saved; keep the dialog (and the chosen photo) so it can be retried.
+					onsaved(saved);
+					toasts.show('error', m['printers.photoFailed']());
+					return;
+				}
+			}
 			toasts.show('success', m['printers.saved']());
 			onsaved(saved);
 			onclose();
