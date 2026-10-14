@@ -230,11 +230,13 @@
 	}
 	// Optimistic flip, then persist. The list filters archived spools out by
 	// default, so unarchiving from here is the only way back once one is hidden.
+	// Archiving also empties the location (the server does it); unarchiving leaves it empty.
 	function toggleArchived() {
 		const next = !spool.archived;
-		inventory.patchSpool(spool.id, { archived: next });
+		const location = spool.location;
+		inventory.patchSpool(spool.id, next ? { archived: next, location: '' } : { archived: next });
 		spoolSource.setSpoolArchived(spool.id, next).catch((e) => {
-			inventory.patchSpool(spool.id, { archived: !next });
+			inventory.patchSpool(spool.id, { archived: !next, location });
 			console.error('Archive toggle failed', e);
 		});
 	}

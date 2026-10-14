@@ -1086,6 +1086,10 @@ async def update(
             spool.extra.extend([models.SpoolField(key=k, value=v) for k, v in v.items() if v is not None])
         else:
             setattr(spool, k, v)
+    # An archived spool is out of use, so it leaves whatever location it was in (an AMS, a shelf)
+    # unless the same request says where it should be.
+    if data.get("archived") is True and "location" not in data:
+        spool.location = None
     await db.commit()
     await spool_changed(spool, EventType.UPDATED)
     return spool
