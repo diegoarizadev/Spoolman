@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import Modal from '$components/Modal.svelte';
 	import PhotoPicker from '$components/PhotoPicker.svelte';
 	import Button from '$components/Button.svelte';
@@ -105,18 +106,22 @@
 	// into the next one.
 	$effect(() => {
 		if (!open) return;
-		name = editing?.name ?? '';
-		manufacturer = editing?.manufacturer ?? '';
-		model = editing?.model ?? '';
-		chamberEnclosed = editing?.chamber_enclosed ?? false;
-		chamberHeated = editing?.chamber_heated ?? false;
-		amsCompatible = editing?.ams_compatible ?? false;
-		nums = emptyNums();
-		texts = emptyTexts();
-		for (const k of NUM_KEYS) nums[k] = editing?.[k] != null ? String(editing[k]) : '';
-		for (const k of TEXT_KEYS) texts[k] = editing?.[k] ?? '';
-		photos = [];
-		saving = false;
+		// Only `open` and `editing` may re-seed the draft, never what the user types.
+		const record = editing;
+		untrack(() => {
+			name = record?.name ?? '';
+			manufacturer = record?.manufacturer ?? '';
+			model = record?.model ?? '';
+			chamberEnclosed = record?.chamber_enclosed ?? false;
+			chamberHeated = record?.chamber_heated ?? false;
+			amsCompatible = record?.ams_compatible ?? false;
+			nums = emptyNums();
+			texts = emptyTexts();
+			for (const k of NUM_KEYS) nums[k] = record?.[k] != null ? String(record[k]) : '';
+			for (const k of TEXT_KEYS) texts[k] = record?.[k] ?? '';
+			photos = [];
+			saving = false;
+		});
 	});
 
 	let valid = $derived(manufacturer.trim() !== '' && model.trim() !== '');
