@@ -3,7 +3,7 @@
 	   The links are the API's own URLs (API_BASE carries the deploy base path) and the
 	   external OrcaSlicer guide; resolve() does not apply to either. */
 	import Button from '../Button.svelte';
-	import CalibrationPhotos from '../CalibrationPhotos.svelte';
+	import PhotoPicker from '../PhotoPicker.svelte';
 	import ConfirmDialog from '../ConfirmDialog.svelte';
 	import Field from '../Field.svelte';
 	import FieldGrid from '../FieldGrid.svelte';
@@ -25,6 +25,8 @@
 	} from '$lib/api/filamentCalibration';
 	import { CALIBRATION_TYPES, calibrationType, formatCalibration, groupByType } from '$lib/calibration/types';
 	import { toasts } from '$lib/stores/toasts.svelte';
+	import { filamentInsights } from '$lib/stores/filamentInsights.svelte';
+	import { lightbox } from '$lib/stores/lightbox.svelte';
 	import * as m from '$lib/paraglide/messages';
 
 	interface Props {
@@ -111,6 +113,7 @@
 			toasts.show('success', m['calibration.saved']());
 			formOpen = false;
 			revision++;
+			void filamentInsights.loadCalibrations(true);
 		} catch {
 			toasts.show('error', m['calibration.saveFailed']());
 		} finally {
@@ -125,6 +128,7 @@
 			await deleteFilamentCalibration(toDelete.id);
 			toDelete = undefined;
 			revision++;
+			void filamentInsights.loadCalibrations(true);
 		} catch {
 			toasts.show('error', m['calibration.deleteFailed']());
 		} finally {
@@ -164,17 +168,22 @@
 					{#if r.images.length}
 						<div class="strip">
 							{#each r.images as img (img.id)}
-								<a
-									href={calibrationImageUrl('filament-calibration', r.id, img.id)}
-									target="_blank"
-									rel="noopener noreferrer"
+								<button
+									class="plain"
+									type="button"
+									onclick={() =>
+										lightbox.open(
+											r.images.map((i) => calibrationImageUrl('filament-calibration', r.id, i.id)),
+											r.images.indexOf(img)
+										)}
+									aria-label={m['photo.view']()}
 								>
 									<img
 										src={calibrationImageUrl('filament-calibration', r.id, img.id)}
 										alt=""
 										loading="lazy"
 									/>
-								</a>
+								</button>
 							{/each}
 						</div>
 					{/if}
@@ -224,11 +233,13 @@
 		{/each}
 		{#if config}
 			<Field label={m['calibration.photos']()}>
-				<CalibrationPhotos
-					existing={editing?.images ?? []}
-					urlFor={(id) => calibrationImageUrl('filament-calibration', editing?.id ?? 0, id)}
+				<PhotoPicker
+					existing={(editing?.images ?? []).map((i) => ({
+						id: i.id,
+						src: calibrationImageUrl('filament-calibration', editing?.id ?? 0, i.id)
+					}))}
 					bind:removedIds
-					bind:pending
+					bind:files={pending}
 				/>
 			</Field>
 			<Field label={m['calibration.notes']()}>
@@ -257,6 +268,13 @@
 />
 
 <style>
+	.plain {
+		padding: 0;
+		border: none;
+		background: none;
+		cursor: zoom-in;
+		display: block;
+	}
 	.empty {
 		margin: 4px 0 8px;
 		font-size: 12px;

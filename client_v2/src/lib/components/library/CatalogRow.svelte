@@ -12,6 +12,9 @@
 	import { inventory } from '$lib/stores/inventory.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { weightAuto } from '$lib/utils/format';
+	import { filamentTipo } from '$lib/utils/tipo';
+	import { filamentInsights } from '$lib/stores/filamentInsights.svelte';
+	import { calibrationType } from '$lib/calibration/types';
 	import { page } from '$app/state';
 	import * as m from '$lib/paraglide/messages';
 
@@ -36,6 +39,30 @@
 	// by the same request) carries the fields the details line shows.
 	let filament = $derived(kind === 'filament' ? inventory.filamentById(group.key) : undefined);
 	let vendor = $derived(kind === 'vendor' ? inventory.vendorById(group.key) : undefined);
+
+	// Beside a filament's own fields: the manufacturer's published nozzle and bed
+	// temperatures, and which calibration tests it has. Both come from list-wide
+	// lookups (see filamentInsights), not from one request per row.
+	let vendorName = $derived(group.vendorName ?? inventory.vendorById(filament?.vendorId ?? '')?.name);
+	let tipo = $derived(filamentTipo(filament?.extra));
+	$effect(() => {
+		if (kind !== 'filament') return;
+		void filamentInsights.loadCalibrations();
+		filamentInsights.ensureDefaults(vendorName, filament?.material, tipo);
+	});
+	let datasheet = $derived(
+		vendorName && filament?.material && tipo
+			? filamentInsights.defaultsFor(vendorName, filament.material, tipo)
+			: undefined
+	);
+	let calibrations = $derived(
+		kind === 'filament'
+			? filamentInsights
+					.typesFor(Number(group.key))
+					.map((t) => calibrationType(t)?.label())
+					.filter((l): l is string => !!l)
+			: []
+	);
 
 	let pips = $derived(spoolPips(group.previewSpools ?? [], settings.lowThreshold));
 
@@ -86,6 +113,24 @@
 							>{filament.nozzleTemp ? `${filament.nozzleTemp} °C` : m['library.catalog.notSet']()}</span
 						></span
 					>
+					{#if datasheet?.nozzle_temp}
+						<span class="it"
+							><span class="k">{m['matdef.list.nozzle']()}</span>
+							<span class="v">{datasheet.nozzle_temp} °C</span></span
+						>
+					{/if}
+					{#if datasheet?.bed_temp}
+						<span class="it"
+							><span class="k">{m['matdef.list.bed']()}</span>
+							<span class="v">{datasheet.bed_temp} °C</span></span
+						>
+					{/if}
+					{#if calibrations.length > 0}
+						<span class="it"
+							><span class="k">{m['matdef.list.calibrations']()}</span>
+							<span class="v">{calibrations.join(', ')}</span></span
+						>
+					{/if}
 				{/if}
 			{:else}
 				<span class="it"

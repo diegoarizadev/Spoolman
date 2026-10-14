@@ -44,6 +44,7 @@
 	import { live } from '$lib/api/live';
 	import { makeSaver, makeExtraSaver } from '$lib/utils/saver';
 	import { trackSave } from '$lib/utils/autosave';
+	import { filamentTipo } from '$lib/utils/tipo';
 	import * as m from '$lib/paraglide/messages';
 
 	let { filament }: { filament: Filament } = $props();
@@ -52,17 +53,7 @@
 	// the display falls back to a plain "no manufacturer" note instead of a link.
 	let vendor = $derived(inventory.vendorById(filament.vendorId));
 
-	// The filament's "tipo" extra field holds a JSON-encoded string ('"Matte"').
-	let tipo = $derived.by(() => {
-		const raw = filament.extra.tipo;
-		if (!raw) return undefined;
-		try {
-			const v: unknown = JSON.parse(raw);
-			return typeof v === 'string' ? v : undefined;
-		} catch {
-			return raw;
-		}
-	});
+	let tipo = $derived(filamentTipo(filament.extra));
 
 	// Empty-spool weight is the one field this filament shares with its
 	// manufacturer, whose value seeds a new filament and is then left behind. Mark

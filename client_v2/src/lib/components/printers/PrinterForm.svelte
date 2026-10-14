@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Modal from '$components/Modal.svelte';
+	import PhotoPicker from '$components/PhotoPicker.svelte';
 	import Button from '$components/Button.svelte';
 	import Field from '$components/Field.svelte';
 	import FieldGrid from '$components/FieldGrid.svelte';
@@ -89,8 +90,7 @@
 	// really clears it.
 	let nums = $state<Record<NumKey, string>>(emptyNums());
 	let texts = $state<Record<TextKey, string>>(emptyTexts());
-	let file = $state<File | null>(null);
-	let preview = $state<string | null>(null);
+	let photos = $state<File[]>([]);
 	let saving = $state(false);
 
 	function emptyNums(): Record<NumKey, string> {
@@ -113,18 +113,11 @@
 		texts = emptyTexts();
 		for (const k of NUM_KEYS) nums[k] = editing?.[k] != null ? String(editing[k]) : '';
 		for (const k of TEXT_KEYS) texts[k] = editing?.[k] ?? '';
-		file = null;
-		preview = null;
+		photos = [];
 		saving = false;
 	});
 
 	let valid = $derived(manufacturer.trim() !== '' && model.trim() !== '');
-
-	function pick(e: Event) {
-		const f = (e.currentTarget as HTMLInputElement).files?.[0] ?? null;
-		file = f;
-		preview = f ? URL.createObjectURL(f) : null;
-	}
 
 	async function save() {
 		if (!valid || saving) return;
@@ -145,7 +138,7 @@
 		for (const k of TEXT_KEYS) out[k] = texts[k].trim() || null;
 		try {
 			let saved = editing ? await updatePrinter(editing.id, body) : await createPrinter(body);
-			if (file) saved = await uploadPrinterImage(saved.id, file);
+			if (photos[0]) saved = await uploadPrinterImage(saved.id, photos[0]);
 			toasts.show('success', m['printers.saved']());
 			onsaved(saved);
 			onclose();
@@ -188,14 +181,12 @@
 				<textarea class="in" rows="2" maxlength="1024" bind:value={texts.comment}></textarea>
 			</Field>
 			<Field label={m['printers.fields.photo']()}>
-				<div class="photo">
-					{#if preview}
-						<img src={preview} alt="" />
-					{:else if editing?.image_path}
-						<img src={printerImageUrl(editing.id)} alt="" />
-					{/if}
-					<input type="file" accept="image/*" onchange={pick} />
-				</div>
+				<PhotoPicker
+					existing={editing?.image_path ? [{ id: 0, src: printerImageUrl(editing.id) }] : []}
+					bind:files={photos}
+					multiple={false}
+					crop
+				/>
 			</Field>
 		</FieldGrid>
 
@@ -311,17 +302,5 @@
 		margin: 6px 0 0;
 		font-size: 11.5px;
 		color: var(--text-dim);
-	}
-	.photo {
-		display: flex;
-		flex-direction: column;
-		gap: 8px;
-		align-items: flex-start;
-	}
-	.photo img {
-		max-width: 100%;
-		max-height: 160px;
-		border-radius: 8px;
-		border: 1px solid var(--border);
 	}
 </style>

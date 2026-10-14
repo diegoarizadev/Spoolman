@@ -8,6 +8,7 @@
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import { printerImageUrl, printerName, type Printer } from '$lib/api/printers';
 	import { splitList } from '$lib/printers/ams';
+	import { lightbox } from '$lib/stores/lightbox.svelte';
 	import * as m from '$lib/paraglide/messages';
 
 	interface Props {
@@ -29,10 +30,14 @@
 	{#if printer}
 		<div class="body">
 			{#if printer.image_path}
-				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- API_BASE already carries the deploy base path -->
-				<a class="photo" href={printerImageUrl(printer.id)} target="_blank" rel="noopener noreferrer">
+				<button
+					class="photo plain"
+					type="button"
+					onclick={() => lightbox.open([printerImageUrl(printer.id)])}
+					aria-label={m['photo.view']()}
+				>
 					<img src={printerImageUrl(printer.id)} alt={printerName(printer)} />
-				</a>
+				</button>
 			{/if}
 
 			<FieldGrid labelWidth="170px">
@@ -122,6 +127,13 @@
 </Modal>
 
 <style>
+	.plain {
+		padding: 0;
+		border: none;
+		background: none;
+		cursor: zoom-in;
+		display: block;
+	}
 	.body {
 		display: flex;
 		flex-direction: column;

@@ -25,6 +25,7 @@
 		type PurgeSettings
 	} from '$lib/api/purge';
 	import { toasts } from '$lib/stores/toasts.svelte';
+	import { lightbox } from '$lib/stores/lightbox.svelte';
 	import * as m from '$lib/paraglide/messages';
 	import Plus from '@lucide/svelte/icons/plus';
 	import Printer from '@lucide/svelte/icons/printer';
@@ -360,10 +361,14 @@
 								>
 								<td>
 									{#if row.image_path}
-										<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- API_BASE already carries the deploy base path -->
-										<a href={purgeImageUrl(row.id)} target="_blank" rel="noopener noreferrer">
+										<button
+											class="plain"
+											type="button"
+											onclick={() => lightbox.open([purgeImageUrl(row.id)])}
+											aria-label={m['photo.view']()}
+										>
 											<img class="thumb" src={purgeImageUrl(row.id)} alt="" loading="lazy" />
-										</a>
+										</button>
 									{/if}
 								</td>
 								<td class="comment">{row.comment ?? ''}</td>
@@ -464,6 +469,13 @@
 />
 
 <style>
+	.plain {
+		padding: 0;
+		border: none;
+		background: none;
+		cursor: zoom-in;
+		display: block;
+	}
 	.page {
 		flex: 1;
 		min-height: 0;

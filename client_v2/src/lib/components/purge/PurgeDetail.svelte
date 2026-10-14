@@ -12,6 +12,7 @@
 		type PurgeCalibration,
 		type PurgeFilament
 	} from '$lib/api/purge';
+	import { lightbox } from '$lib/stores/lightbox.svelte';
 	import * as m from '$lib/paraglide/messages';
 
 	interface Props {
@@ -58,11 +59,15 @@
 			{/if}
 		</FieldGrid>
 		{#if purge.image_path}
-			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- API_BASE already carries the deploy base path -->
-			<a class="photo" href={purgeImageUrl(purge.id)} target="_blank" rel="noopener noreferrer">
+			<button
+				class="photo plain"
+				type="button"
+				onclick={() => lightbox.open([purgeImageUrl(purge.id)])}
+				aria-label={m['purge.zoomPhoto']()}
+			>
 				<img src={purgeImageUrl(purge.id)} alt={m['purge.fields.photo']()} />
 				<span>{m['purge.zoomPhoto']()}</span>
-			</a>
+			</button>
 		{/if}
 	{/if}
 
@@ -75,6 +80,13 @@
 </Modal>
 
 <style>
+	.plain {
+		padding: 0;
+		border: none;
+		background: none;
+		cursor: zoom-in;
+		display: block;
+	}
 	.fil {
 		display: inline-flex;
 		align-items: center;

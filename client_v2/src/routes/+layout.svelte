@@ -5,6 +5,7 @@
 	import AddSpoolModal from '$components/AddSpoolModal.svelte';
 	import QrScannerModal from '$components/QrScannerModal.svelte';
 	import Toaster from '$components/Toaster.svelte';
+	import Lightbox from '$components/Lightbox.svelte';
 	import { ui } from '$lib/stores/ui.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { serverInfo } from '$lib/stores/serverInfo.svelte';
@@ -171,6 +172,7 @@
 <QrScannerModal open={ui.scannerOpen} onclose={() => ui.closeScanner()} />
 
 <Toaster />
+<Lightbox />
 
 <style>
 	.app {

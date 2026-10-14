@@ -41,6 +41,7 @@
 	import { trackSave } from '$lib/utils/autosave';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
+	import { filamentTipo } from '$lib/utils/tipo';
 	import * as m from '$lib/paraglide/messages';
 
 	let { spool }: { spool: Spool } = $props();
@@ -68,17 +69,7 @@
 	// the display falls back to a plain "no manufacturer" note instead of a link.
 	let vendor = $derived(inventory.vendorById(filament.vendorId));
 
-	// The filament's "tipo" extra field holds a JSON-encoded string ('"Matte"').
-	let tipo = $derived.by(() => {
-		const raw = filament.extra.tipo;
-		if (!raw) return undefined;
-		try {
-			const v: unknown = JSON.parse(raw);
-			return typeof v === 'string' ? v : undefined;
-		} catch {
-			return raw;
-		}
-	});
+	let tipo = $derived(filamentTipo(filament.extra));
 	let used = $derived(spool.initial - spool.remaining);
 
 	// --- inherited fields ---------------------------------------------------

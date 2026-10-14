@@ -3,7 +3,7 @@
 	import ConfirmDialog from '$components/ConfirmDialog.svelte';
 	import Field from '$components/Field.svelte';
 	import FieldGrid from '$components/FieldGrid.svelte';
-	import CalibrationPhotos from '$components/CalibrationPhotos.svelte';
+	import PhotoPicker from '$components/PhotoPicker.svelte';
 	import Modal from '$components/Modal.svelte';
 	import NumberInput from '$components/NumberInput.svelte';
 	import Plus from '@lucide/svelte/icons/plus';
@@ -22,6 +22,7 @@
 	import type { Printer } from '$lib/api/printers';
 	import { splitList } from '$lib/printers/ams';
 	import { toasts } from '$lib/stores/toasts.svelte';
+	import { lightbox } from '$lib/stores/lightbox.svelte';
 	import * as m from '$lib/paraglide/messages';
 
 	interface Props {
@@ -153,10 +154,18 @@
 			<div class="rec">
 				<div class="strip">
 					{#each r.images as img (img.id)}
-						<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- API_BASE already carries the deploy base path -->
-						<a href={vfaImageUrl(r.id, img.id)} target="_blank" rel="noopener noreferrer">
+						<button
+							class="plain"
+							type="button"
+							onclick={() =>
+								lightbox.open(
+									r.images.map((i) => vfaImageUrl(r.id, i.id)),
+									r.images.indexOf(img)
+								)}
+							aria-label={m['photo.view']()}
+						>
 							<img src={vfaImageUrl(r.id, img.id)} alt="" loading="lazy" />
-						</a>
+						</button>
 					{/each}
 				</div>
 				<div class="info">
@@ -201,11 +210,13 @@
 			<NumberInput bind:value={speedMax} unit="mm/s" />
 		</Field>
 		<Field label={m['printers.vfa.photos']()}>
-			<CalibrationPhotos
-				existing={editing?.images ?? []}
-				urlFor={(id) => vfaImageUrl(editing?.id ?? 0, id)}
+			<PhotoPicker
+				existing={(editing?.images ?? []).map((i) => ({
+					id: i.id,
+					src: vfaImageUrl(editing?.id ?? 0, i.id)
+				}))}
 				bind:removedIds
-				bind:pending
+				bind:files={pending}
 			/>
 		</Field>
 		<Field label={m['printers.fields.comment']()}>
@@ -235,6 +246,13 @@
 />
 
 <style>
+	.plain {
+		padding: 0;
+		border: none;
+		background: none;
+		cursor: zoom-in;
+		display: block;
+	}
 	.vfa {
 		border: 1px solid var(--border);
 		border-radius: var(--radius-lg);

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Modal from '$components/Modal.svelte';
+	import PhotoPicker from '$components/PhotoPicker.svelte';
 	import Button from '$components/Button.svelte';
 	import Field from '$components/Field.svelte';
 	import FieldGrid from '$components/FieldGrid.svelte';
@@ -40,8 +41,7 @@
 	let nozzle = $state<number>(0.4);
 	let temp = $state<number>(220);
 	let comment = $state('');
-	let file = $state<File | null>(null);
-	let preview = $state<string | null>(null);
+	let photos = $state<File[]>([]);
 	let saving = $state(false);
 
 	// Re-seed the draft each time the dialog opens, so a cancelled edit never leaks
@@ -55,19 +55,12 @@
 		nozzle = editing?.nozzle_size ?? prefill?.nozzle ?? settings.nozzleSizes[0] ?? 0.4;
 		temp = editing?.print_temp ?? 220;
 		comment = editing?.comment ?? '';
-		file = null;
-		preview = null;
+		photos = [];
 		saving = false;
 	});
 
 	let nozzleOptions = $derived([...new Set([...settings.nozzleSizes, nozzle])].sort((a, b) => a - b));
 	let valid = $derived(fromId > 0 && toId > 0 && fromId !== toId && nozzle > 0 && volume >= 0);
-
-	function pick(e: Event) {
-		const f = (e.currentTarget as HTMLInputElement).files?.[0] ?? null;
-		file = f;
-		preview = f ? URL.createObjectURL(f) : null;
-	}
 
 	async function save() {
 		if (!valid || saving) return;
@@ -83,7 +76,7 @@
 		};
 		try {
 			const saved = editing ? await updatePurge(editing.id, body) : await createPurge(body);
-			if (file) await uploadPurgeImage(saved.id, file);
+			if (photos[0]) await uploadPurgeImage(saved.id, photos[0]);
 			toasts.show('success', m['purge.saved']());
 			onsaved();
 			onclose();
@@ -136,14 +129,12 @@
 			<textarea class="sel" rows="3" maxlength="1024" bind:value={comment}></textarea>
 		</Field>
 		<Field label={m['purge.fields.photo']()}>
-			<div class="photo">
-				{#if preview}
-					<img src={preview} alt="" />
-				{:else if editing?.image_path}
-					<img src={purgeImageUrl(editing.id)} alt="" />
-				{/if}
-				<input type="file" accept="image/*" onchange={pick} />
-			</div>
+			<PhotoPicker
+				existing={editing?.image_path ? [{ id: 0, src: purgeImageUrl(editing.id) }] : []}
+				bind:files={photos}
+				multiple={false}
+				crop
+			/>
 		</Field>
 	</FieldGrid>
 	{#if fromId > 0 && fromId === toId}
@@ -173,18 +164,6 @@
 	}
 	textarea.sel {
 		resize: vertical;
-	}
-	.photo {
-		display: flex;
-		flex-direction: column;
-		gap: 8px;
-		align-items: flex-start;
-	}
-	.photo img {
-		max-width: 100%;
-		max-height: 160px;
-		border-radius: 8px;
-		border: 1px solid var(--border);
 	}
 	.warn {
 		color: #e5484d;

@@ -16,7 +16,7 @@
 
 	let { vendor, material, type }: Props = $props();
 
-	type Row = { key: string; label: () => string; unit?: string };
+	type Row = { key: string; label: () => string; unit?: string; help?: () => string };
 	type Group = { title: () => string; rows: Row[] };
 
 	const GROUPS: Group[] = [
@@ -42,8 +42,17 @@
 			rows: [
 				{ key: 'fan_speed', label: () => m['matdef.field.fan'](), unit: '%' },
 				{ key: 'max_speed', label: () => m['matdef.field.maxSpeed'](), unit: 'mm/s' },
-				{ key: 'max_volumetric_speed', label: () => m['matdef.field.mvs'](), unit: 'mm³/s' },
-				{ key: 'flow_ratio', label: () => m['matdef.field.flowRatio']() }
+				{
+					key: 'max_volumetric_speed',
+					label: () => m['matdef.field.mvs'](),
+					unit: 'mm³/s',
+					help: () => m['matdef.help.mvs']()
+				},
+				{
+					key: 'flow_ratio',
+					label: () => m['matdef.field.flowRatio'](),
+					help: () => m['matdef.help.flowRatio']()
+				}
 			]
 		},
 		{
@@ -56,30 +65,99 @@
 		{
 			title: () => m['matdef.group.mechanical'](),
 			rows: [
-				{ key: 'tensile_strength_xy', label: () => m['matdef.field.tensileXY'](), unit: 'MPa' },
-				{ key: 'tensile_strength_z', label: () => m['matdef.field.tensileZ'](), unit: 'MPa' },
-				{ key: 'flexural_strength_xy', label: () => m['matdef.field.flexXY'](), unit: 'MPa' },
-				{ key: 'flexural_strength_z', label: () => m['matdef.field.flexZ'](), unit: 'MPa' },
-				{ key: 'elongation_xy', label: () => m['matdef.field.elongXY'](), unit: '%' },
-				{ key: 'elongation_z', label: () => m['matdef.field.elongZ'](), unit: '%' },
-				{ key: 'izod_notched_xy', label: () => m['matdef.field.izod'](), unit: 'kJ/m²' },
-				{ key: 'charpy_notched_xy', label: () => m['matdef.field.charpy'](), unit: 'kJ/m²' }
+				{
+					key: 'tensile_strength_xy',
+					label: () => m['matdef.field.tensileXY'](),
+					unit: 'MPa',
+					help: () => m['matdef.help.tensileXY']()
+				},
+				{
+					key: 'tensile_strength_z',
+					label: () => m['matdef.field.tensileZ'](),
+					unit: 'MPa',
+					help: () => m['matdef.help.tensileZ']()
+				},
+				{
+					key: 'flexural_strength_xy',
+					label: () => m['matdef.field.flexXY'](),
+					unit: 'MPa',
+					help: () => m['matdef.help.flexXY']()
+				},
+				{
+					key: 'flexural_strength_z',
+					label: () => m['matdef.field.flexZ'](),
+					unit: 'MPa',
+					help: () => m['matdef.help.flexZ']()
+				},
+				{
+					key: 'elongation_xy',
+					label: () => m['matdef.field.elongXY'](),
+					unit: '%',
+					help: () => m['matdef.help.elongXY']()
+				},
+				{
+					key: 'elongation_z',
+					label: () => m['matdef.field.elongZ'](),
+					unit: '%',
+					help: () => m['matdef.help.elongZ']()
+				},
+				{
+					key: 'izod_notched_xy',
+					label: () => m['matdef.field.izod'](),
+					unit: 'kJ/m²',
+					help: () => m['matdef.help.izod']()
+				},
+				{
+					key: 'charpy_notched_xy',
+					label: () => m['matdef.field.charpy'](),
+					unit: 'kJ/m²',
+					help: () => m['matdef.help.charpy']()
+				}
 			]
 		},
 		{
 			title: () => m['matdef.group.thermal'](),
 			rows: [
-				{ key: 'softening_temp', label: () => m['matdef.field.softening'](), unit: '°C' },
-				{ key: 'vicat_temp', label: () => m['matdef.field.vicat'](), unit: '°C' },
-				{ key: 'glass_transition_temp', label: () => m['matdef.field.tg'](), unit: '°C' },
-				{ key: 'melting_temp', label: () => m['matdef.field.melting'](), unit: '°C' }
+				{
+					key: 'softening_temp',
+					label: () => m['matdef.field.softening'](),
+					unit: '°C',
+					help: () => m['matdef.help.softening']()
+				},
+				{
+					key: 'vicat_temp',
+					label: () => m['matdef.field.vicat'](),
+					unit: '°C',
+					help: () => m['matdef.help.vicat']()
+				},
+				{
+					key: 'glass_transition_temp',
+					label: () => m['matdef.field.tg'](),
+					unit: '°C',
+					help: () => m['matdef.help.tg']()
+				},
+				{
+					key: 'melting_temp',
+					label: () => m['matdef.field.melting'](),
+					unit: '°C',
+					help: () => m['matdef.help.melting']()
+				}
 			]
 		},
 		{
 			title: () => m['matdef.group.other'](),
 			rows: [
-				{ key: 'melt_flow_rate', label: () => m['matdef.field.mfr'](), unit: 'g/10min' },
-				{ key: 'shore_hardness', label: () => m['matdef.field.shore']() }
+				{
+					key: 'melt_flow_rate',
+					label: () => m['matdef.field.mfr'](),
+					unit: 'g/10min',
+					help: () => m['matdef.help.mfr']()
+				},
+				{
+					key: 'shore_hardness',
+					label: () => m['matdef.field.shore'](),
+					help: () => m['matdef.help.shore']()
+				}
 			]
 		}
 	];
@@ -126,7 +204,7 @@
 			<div class="gname">{g.title()}</div>
 			<FieldGrid labelWidth="150px">
 				{#each g.rows as r (r.key)}
-					<Field label={r.label()} mono>{data[r.key]}{r.unit ? ` ${r.unit}` : ''}</Field>
+					<Field label={r.label()} help={r.help?.()} mono>{data[r.key]}{r.unit ? ` ${r.unit}` : ''}</Field>
 				{/each}
 			</FieldGrid>
 		{/each}
@@ -134,14 +212,14 @@
 			<div class="gname">{m['matdef.group.compat']()}</div>
 			<FieldGrid labelWidth="150px">
 				{#if data.ams_compatibility}
-					<Field label={m['matdef.field.ams']()}>
+					<Field label={m['matdef.field.ams']()} help={m['matdef.help.ams']()}>
 						<span class="tags"
 							>{#each splitList(data.ams_compatibility) as t (t)}<span class="tag">{t}</span>{/each}</span
 						>
 					</Field>
 				{/if}
 				{#if data.build_plate}
-					<Field label={m['matdef.field.plates']()}>
+					<Field label={m['matdef.field.plates']()} help={m['matdef.help.plates']()}>
 						<span class="tags"
 							>{#each splitList(data.build_plate) as t (t)}<span class="tag">{t}</span>{/each}</span
 						>
