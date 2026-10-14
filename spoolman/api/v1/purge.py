@@ -192,6 +192,7 @@ async def upload_image(
     """Upload an image for a purge calibration."""
     try:
         item = await purge.get_by_id(db, purge_id)
+        previous = item.image_path
 
         # Save file
         file_ext = Path(file.filename).suffix
@@ -203,10 +204,30 @@ async def upload_image(
 
         # Update database
         item = await purge.update(db=db, purge_id=purge_id, data={"image_path": file_name})
+        # The new photo replaces the old one, so don't leave the old file behind.
+        if previous:
+            get_image_dir().joinpath(previous).unlink(missing_ok=True)
         return PurgeCalibration.from_db(item)
     except Exception as e:
         logger.exception("Error uploading image for purge calibration %d", purge_id)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete(
+    "/{purge_id}/image",
+    responses={404: {"model": Message}},
+)
+async def delete_image(
+    db: Annotated[AsyncSession, Depends(database.get_db_session)],
+    purge_id: int,
+) -> PurgeCalibration:
+    """Remove the image of a purge calibration."""
+    item = await purge.get_by_id(db, purge_id)
+    previous = item.image_path
+    if previous:
+        item = await purge.update(db=db, purge_id=purge_id, data={"image_path": None})
+        get_image_dir().joinpath(previous).unlink(missing_ok=True)
+    return PurgeCalibration.from_db(item)
 
 
 @router.get(

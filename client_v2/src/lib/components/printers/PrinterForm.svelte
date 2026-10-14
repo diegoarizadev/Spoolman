@@ -11,6 +11,7 @@
 		createPrinter,
 		printerImageUrl,
 		updatePrinter,
+		deletePrinterImage,
 		uploadPrinterImage,
 		type Printer,
 		type PrinterInput
@@ -93,6 +94,7 @@
 	let nums = $state<Record<NumKey, string>>(emptyNums());
 	let texts = $state<Record<TextKey, string>>(emptyTexts());
 	let photos = $state<File[]>([]);
+	let removedIds = $state<number[]>([]);
 	let saving = $state(false);
 
 	function emptyNums(): Record<NumKey, string> {
@@ -120,6 +122,7 @@
 			for (const k of NUM_KEYS) nums[k] = record?.[k] != null ? String(record[k]) : '';
 			for (const k of TEXT_KEYS) texts[k] = record?.[k] ?? '';
 			photos = [];
+			removedIds = [];
 			saving = false;
 		});
 	});
@@ -155,6 +158,8 @@
 					toasts.show('error', m['printers.photoFailed']());
 					return;
 				}
+			} else if (editing?.image_path && removedIds.includes(0)) {
+				saved = await deletePrinterImage(saved.id);
 			}
 			toasts.show('success', m['printers.saved']());
 			onsaved(saved);
@@ -209,6 +214,7 @@
 				<PhotoPicker
 					existing={editing?.image_path ? [{ id: 0, src: printerImageUrl(editing.id) }] : []}
 					bind:files={photos}
+					bind:removedIds
 					multiple={false}
 					crop
 				/>

@@ -114,6 +114,8 @@ async def upload_image(
     try:
         await printer.get_by_id(db, printer_id)
 
+        previous = (await printer.get_by_id(db, printer_id)).image_path
+
         file_ext = Path(file.filename or "").suffix
         file_name = f"{uuid.uuid4()}{file_ext}"
         file_path = get_image_dir().joinpath(file_name)
@@ -122,10 +124,30 @@ async def upload_image(
             shutil.copyfileobj(file.file, buffer)
 
         item = await printer.update(db=db, printer_id=printer_id, data={"image_path": file_name})
+        # The new photo replaces the old one, so don't leave the old file behind.
+        if previous:
+            get_image_dir().joinpath(previous).unlink(missing_ok=True)
         return Printer.from_db(item)
     except Exception as e:
         logger.exception("Error uploading image for printer %d", printer_id)
         raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.delete(
+    "/{printer_id}/image",
+    responses={404: {"model": Message}},
+)
+async def delete_image(
+    db: Annotated[AsyncSession, Depends(database.get_db_session)],
+    printer_id: int,
+) -> Printer:
+    """Remove a printer's photo."""
+    item = await printer.get_by_id(db, printer_id)
+    previous = item.image_path
+    if previous:
+        item = await printer.update(db=db, printer_id=printer_id, data={"image_path": None})
+        get_image_dir().joinpath(previous).unlink(missing_ok=True)
+    return Printer.from_db(item)
 
 
 @router.get(

@@ -1,5 +1,5 @@
 import { API_BASE } from './config';
-import { deleteResource, getJson, getList, patchJson, postJson } from './http';
+import { deleteJson, deleteResource, getJson, getList, patchJson, postJson } from './http';
 
 // Printer catalog (/api/v1/printer): hardware specs, plus which location acts as the
 // printer's AMS and in which order its slots are shown.
@@ -82,6 +82,8 @@ export async function uploadPrinterImage(id: number, file: File): Promise<Printe
 	if (!res.ok) throw new Error(`POST /printer/${id}/image → ${res.status}`);
 	return (await res.json()) as Printer;
 }
+
+export const deletePrinterImage = (id: number) => deleteJson<Printer>(`/printer/${id}/image`);
 
 export const printerImageUrl = (id: number) => `${API_BASE}/printer/${id}/image`;
 

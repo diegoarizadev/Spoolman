@@ -1,5 +1,5 @@
 import { API_BASE } from './config';
-import { deleteResource, getJson, getList, patchJson, postJson, type QueryParams } from './http';
+import { deleteJson, deleteResource, getJson, getList, patchJson, postJson, type QueryParams } from './http';
 import { getSettings, parseSetting } from './settings';
 
 // Purge library (/api/v1/purge): how much filament to purge when going from one
@@ -77,6 +77,8 @@ export async function uploadPurgeImage(id: number, file: File): Promise<PurgeCal
 	if (!res.ok) throw new Error(`POST /purge/${id}/image → ${res.status}`);
 	return (await res.json()) as PurgeCalibration;
 }
+
+export const deletePurgeImage = (id: number) => deleteJson<PurgeCalibration>(`/purge/${id}/image`);
 
 export const purgeImageUrl = (id: number) => `${API_BASE}/purge/${id}/image`;
 

@@ -10,6 +10,7 @@
 		purgeFilamentLabel,
 		purgeImageUrl,
 		updatePurge,
+		deletePurgeImage,
 		uploadPurgeImage,
 		type PurgeCalibration,
 		type PurgeFilament,
@@ -42,6 +43,7 @@
 	let temp = $state<number>(220);
 	let comment = $state('');
 	let photos = $state<File[]>([]);
+	let removedIds = $state<number[]>([]);
 	let saving = $state(false);
 
 	// Re-seed the draft each time the dialog opens, so a cancelled edit never leaks
@@ -56,6 +58,7 @@
 		temp = editing?.print_temp ?? 220;
 		comment = editing?.comment ?? '';
 		photos = [];
+		removedIds = [];
 		saving = false;
 	});
 
@@ -77,6 +80,7 @@
 		try {
 			const saved = editing ? await updatePurge(editing.id, body) : await createPurge(body);
 			if (photos[0]) await uploadPurgeImage(saved.id, photos[0]);
+			else if (editing?.image_path && removedIds.includes(0)) await deletePurgeImage(saved.id);
 			toasts.show('success', m['purge.saved']());
 			onsaved();
 			onclose();
@@ -132,6 +136,7 @@
 			<PhotoPicker
 				existing={editing?.image_path ? [{ id: 0, src: purgeImageUrl(editing.id) }] : []}
 				bind:files={photos}
+				bind:removedIds
 				multiple={false}
 				crop
 			/>

@@ -15,7 +15,7 @@
 	interface Props {
 		/** Photos already saved on the record, shown first. */
 		existing?: { id: number; src: string }[];
-		/** Ids of saved photos the user removed; applied when the form is saved. */
+		/** Ids of saved photos the user removed; applied when the form is saved (a single photo has id 0). */
 		removedIds?: number[];
 		/** New photos chosen but not uploaded yet. */
 		files?: File[];
@@ -92,14 +92,12 @@
 					<button class="open" type="button" onclick={() => view(i)} aria-label={m['photo.view']()}>
 						<img src={img.src} alt="" />
 					</button>
-					{#if multiple}
-						<button
-							class="rm"
-							type="button"
-							aria-label={m['buttons.delete']()}
-							onclick={() => (removedIds = [...removedIds, img.id])}><X size={12} /></button
-						>
-					{/if}
+					<button
+						class="rm"
+						type="button"
+						aria-label={m['buttons.delete']()}
+						onclick={() => (removedIds = [...removedIds, img.id])}><X size={12} /></button
+					>
 				</div>
 			{/each}
 			{#each files as file, i (i + file.name)}
