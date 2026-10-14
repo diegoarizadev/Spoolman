@@ -44,6 +44,7 @@
 
 	let speedMin = $state('');
 	let speedMax = $state('');
+	let speedBest = $state('');
 	let nozzle = $state(0);
 	let notes = $state('');
 	let removedIds = $state<number[]>([]);
@@ -86,6 +87,7 @@
 		speedMax = record?.vfa_speed_max != null ? String(record.vfa_speed_max) : '';
 		const sizes = splitList(printer.nozzle_diameters).map(Number);
 		// The nozzle the test used; for a new test, the printer's usual one (0.4 if offered).
+		speedBest = record?.vfa_speed_best != null ? String(record.vfa_speed_best) : '';
 		nozzle = record?.nozzle_size ?? (sizes.includes(0.4) ? 0.4 : (sizes[0] ?? 0.4));
 		notes = record?.notes ?? '';
 		removedIds = [];
@@ -100,6 +102,7 @@
 		const body = {
 			vfa_speed_min: parseFloat(speedMin),
 			vfa_speed_max: parseFloat(speedMax),
+			vfa_speed_best: Number.isFinite(parseFloat(speedBest)) ? parseFloat(speedBest) : null,
 			nozzle_size: nozzle,
 			notes: notes.trim() || null
 		};
@@ -172,6 +175,9 @@
 					<div class="date">{new Date(r.registered).toLocaleDateString()}</div>
 					<div class="vals">
 						{m['printers.vfa.speedRange']({ min: r.vfa_speed_min ?? '-', max: r.vfa_speed_max ?? '-' })}
+						{#if r.vfa_speed_best}
+							<span class="best">{m['printers.vfa.bestShown']({ speed: r.vfa_speed_best })}</span>
+						{/if}
 						{#if r.nozzle_size}
 							<span class="noz">{r.nozzle_size} mm</span>
 						{/if}
@@ -208,6 +214,9 @@
 		</Field>
 		<Field label={m['printers.vfa.speedMax']()}>
 			<NumberInput bind:value={speedMax} unit="mm/s" />
+		</Field>
+		<Field label={m['printers.vfa.speedBest']()} help={m['printers.vfa.speedBestHelp']()}>
+			<NumberInput bind:value={speedBest} unit="mm/s" />
 		</Field>
 		<Field label={m['printers.vfa.photos']()}>
 			<PhotoPicker
@@ -315,6 +324,14 @@
 	.noz {
 		margin-left: 6px;
 		border: 1px solid var(--border-strong);
+		border-radius: 5px;
+		padding: 0 6px;
+		font-size: 11px;
+	}
+	.best {
+		margin-left: 6px;
+		border: 1px solid var(--accent);
+		color: var(--accent);
 		border-radius: 5px;
 		padding: 0 6px;
 		font-size: 11px;

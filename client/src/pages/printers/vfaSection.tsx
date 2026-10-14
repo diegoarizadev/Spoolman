@@ -17,6 +17,7 @@ interface IPrinterVfa {
   registered: string;
   vfa_speed_min?: number;
   vfa_speed_max?: number;
+  vfa_speed_best?: number;
   nozzle_size?: number;
   images?: { id: number }[];
   notes?: string;
@@ -133,6 +134,13 @@ function VfaFormModal({
         <Form.Item label="Vel. máxima (mm/s)" name="vfa_speed_max" rules={[{ required: true }]}>
           <InputNumber style={{ width: "100%" }} />
         </Form.Item>
+        <Form.Item
+          label="Velocidad recomendada (mm/s)"
+          name="vfa_speed_best"
+          tooltip="La velocidad con la que se logró la mejor calidad de impresión, normalmente fuera del rango con ondulaciones."
+        >
+          <InputNumber style={{ width: "100%" }} min={1} />
+        </Form.Item>
 
         <Form.Item label="Imágenes de evidencia">
           <CalibrationImagesField
@@ -221,7 +229,7 @@ export function PrinterVfaSection({ printerId, nozzles }: { printerId?: number; 
                 <div style={{ flex: 1 }}>
                   <Stat
                     label={new Date(record.registered).toLocaleDateString()}
-                    value={`Vel. mínima: ${record.vfa_speed_min ?? "-"} mm/s · Vel. máxima: ${record.vfa_speed_max ?? "-"} mm/s${record.nozzle_size ? ` · Boquilla: ${record.nozzle_size} mm` : ""}`}
+                    value={`Vel. mínima: ${record.vfa_speed_min ?? "-"} mm/s · Vel. máxima: ${record.vfa_speed_max ?? "-"} mm/s${record.vfa_speed_best ? ` · Recomendada: ${record.vfa_speed_best} mm/s` : ""}${record.nozzle_size ? ` · Boquilla: ${record.nozzle_size} mm` : ""}`}
                   />
                   {record.notes && <div style={{ fontSize: 12, opacity: 0.7 }}>{record.notes}</div>}
                 </div>

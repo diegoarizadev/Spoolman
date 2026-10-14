@@ -2,7 +2,7 @@ import { deleteResource, getList, patchJson, postJson } from './http';
 import { calibrationImageUrl, saveCalibrationImages, type CalibrationImage } from './calibrationImages';
 
 // VFA (resonance) tests recorded per printer (/api/v1/printer-calibration). A test
-// records the speed range that makes vertical walls ripple, the nozzle it was run
+// records the speed range that makes vertical walls ripple, the speed that prints best, the nozzle it was run
 // with, and any number of evidence photos.
 
 export interface PrinterVfa {
@@ -10,6 +10,8 @@ export interface PrinterVfa {
 	registered: string;
 	vfa_speed_min?: number;
 	vfa_speed_max?: number;
+	/** The speed that gives the best print quality. */
+	vfa_speed_best?: number;
 	nozzle_size?: number;
 	images: CalibrationImage[];
 	notes?: string;
@@ -18,6 +20,7 @@ export interface PrinterVfa {
 export interface PrinterVfaInput {
 	vfa_speed_min: number;
 	vfa_speed_max: number;
+	vfa_speed_best: number | null;
 	nozzle_size: number | null;
 	notes: string | null;
 }
