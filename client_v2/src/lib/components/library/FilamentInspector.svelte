@@ -23,6 +23,8 @@
 	import Field from '../Field.svelte';
 	import VendorSection from './VendorSection.svelte';
 	import ChangeVendorModal from './ChangeVendorModal.svelte';
+	import FilamentCalibrations from './FilamentCalibrations.svelte';
+	import MaterialDefaults from './MaterialDefaults.svelte';
 	import OverrideMark from './OverrideMark.svelte';
 	import type { Filament, Spool } from '$lib/types';
 	import { inventory } from '$lib/stores/inventory.svelte';
@@ -49,6 +51,18 @@
 	// Undefined when the filament has no manufacturer set (or it isn't cached yet) —
 	// the display falls back to a plain "no manufacturer" note instead of a link.
 	let vendor = $derived(inventory.vendorById(filament.vendorId));
+
+	// The filament's "tipo" extra field holds a JSON-encoded string ('"Matte"').
+	let tipo = $derived.by(() => {
+		const raw = filament.extra.tipo;
+		if (!raw) return undefined;
+		try {
+			const v: unknown = JSON.parse(raw);
+			return typeof v === 'string' ? v : undefined;
+		} catch {
+			return raw;
+		}
+	});
 
 	// Empty-spool weight is the one field this filament shares with its
 	// manufacturer, whose value seeds a new filament and is then left behind. Mark
@@ -469,6 +483,9 @@
 				emptyWeightShadowedBy={vendorTareShadowedBy}
 				onchange={() => (changeVendorOpen = true)}
 			/>
+
+			<MaterialDefaults vendor={vendor?.name} material={filament.material} type={tipo} />
+			<FilamentCalibrations filamentId={Number(filament.id)} />
 		</div>
 	</div>
 </div>

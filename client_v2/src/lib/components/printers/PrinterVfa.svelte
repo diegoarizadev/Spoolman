@@ -3,12 +3,12 @@
 	import ConfirmDialog from '$components/ConfirmDialog.svelte';
 	import Field from '$components/Field.svelte';
 	import FieldGrid from '$components/FieldGrid.svelte';
+	import CalibrationPhotos from '$components/CalibrationPhotos.svelte';
 	import Modal from '$components/Modal.svelte';
 	import NumberInput from '$components/NumberInput.svelte';
 	import Plus from '@lucide/svelte/icons/plus';
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
-	import X from '@lucide/svelte/icons/x';
 	import Info from '@lucide/svelte/icons/info';
 	import {
 		createPrinterVfa,
@@ -47,7 +47,6 @@
 	let notes = $state('');
 	let removedIds = $state<number[]>([]);
 	let pending = $state<File[]>([]);
-	let pendingUrls = $derived(pending.map((f) => URL.createObjectURL(f)));
 	let saving = $state(false);
 
 	// Nozzles the printer offers, plus the one on the record being edited so an old
@@ -57,7 +56,6 @@
 			(a, b) => a - b
 		)
 	);
-	let visibleImages = $derived((editing?.images ?? []).filter((i) => !removedIds.includes(i.id)));
 	let valid = $derived(
 		Number.isFinite(parseFloat(speedMin)) &&
 			Number.isFinite(parseFloat(speedMax)) &&
@@ -81,12 +79,6 @@
 		return () => ctrl.abort();
 	});
 
-	// Release the preview URLs when the previews change or the component goes away.
-	$effect(() => {
-		const urls = pendingUrls;
-		return () => urls.forEach((u) => URL.revokeObjectURL(u));
-	});
-
 	function openForm(record?: PrinterVfa) {
 		editing = record;
 		speedMin = record?.vfa_speed_min != null ? String(record.vfa_speed_min) : '';
@@ -99,12 +91,6 @@
 		pending = [];
 		saving = false;
 		formOpen = true;
-	}
-
-	function pickFiles(e: Event) {
-		const input = e.currentTarget as HTMLInputElement;
-		pending = [...pending, ...Array.from(input.files ?? [])];
-		input.value = '';
 	}
 
 	async function save() {
@@ -215,31 +201,12 @@
 			<NumberInput bind:value={speedMax} unit="mm/s" />
 		</Field>
 		<Field label={m['printers.vfa.photos']()}>
-			<div class="photos">
-				<div class="thumbs">
-					{#each visibleImages as img (img.id)}
-						<div class="thumb">
-							<img src={vfaImageUrl(editing?.id ?? 0, img.id)} alt="" />
-							<button
-								type="button"
-								aria-label={m['buttons.delete']()}
-								onclick={() => (removedIds = [...removedIds, img.id])}><X size={12} /></button
-							>
-						</div>
-					{/each}
-					{#each pending as file, i (i + file.name)}
-						<div class="thumb">
-							<img src={pendingUrls[i]} alt="" />
-							<button
-								type="button"
-								aria-label={m['buttons.delete']()}
-								onclick={() => (pending = pending.filter((_, j) => j !== i))}><X size={12} /></button
-							>
-						</div>
-					{/each}
-				</div>
-				<input type="file" accept="image/*" multiple onchange={pickFiles} />
-			</div>
+			<CalibrationPhotos
+				existing={editing?.images ?? []}
+				urlFor={(id) => vfaImageUrl(editing?.id ?? 0, id)}
+				bind:removedIds
+				bind:pending
+			/>
 		</Field>
 		<Field label={m['printers.fields.comment']()}>
 			<textarea class="in" rows="2" maxlength="1024" bind:value={notes}></textarea>
@@ -351,43 +318,6 @@
 	}
 	textarea.in {
 		resize: vertical;
-	}
-	.photos {
-		display: flex;
-		flex-direction: column;
-		gap: 8px;
-	}
-	.thumbs {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 6px;
-	}
-	.thumb {
-		position: relative;
-		width: 72px;
-		height: 72px;
-	}
-	.thumb img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		border-radius: 8px;
-		border: 1px solid var(--border);
-	}
-	.thumb button {
-		position: absolute;
-		top: 2px;
-		right: 2px;
-		width: 20px;
-		height: 20px;
-		border: none;
-		border-radius: 50%;
-		background: rgba(0, 0, 0, 0.65);
-		color: #fff;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
 	}
 	.warn {
 		color: #e5484d;

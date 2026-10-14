@@ -18,6 +18,8 @@
 	import DateTimeField from '../DateTimeField.svelte';
 	import SectionLabel from '../SectionLabel.svelte';
 	import ExtraFieldsSection from '../ExtraFieldsSection.svelte';
+	import FilamentCalibrations from './FilamentCalibrations.svelte';
+	import MaterialDefaults from './MaterialDefaults.svelte';
 	import TagsSection from '../TagsSection.svelte';
 	import Breadcrumbs from '../Breadcrumbs.svelte';
 	import FieldGrid from '../FieldGrid.svelte';
@@ -65,6 +67,18 @@
 	// Undefined when the filament has no manufacturer set (or it isn't cached yet) —
 	// the display falls back to a plain "no manufacturer" note instead of a link.
 	let vendor = $derived(inventory.vendorById(filament.vendorId));
+
+	// The filament's "tipo" extra field holds a JSON-encoded string ('"Matte"').
+	let tipo = $derived.by(() => {
+		const raw = filament.extra.tipo;
+		if (!raw) return undefined;
+		try {
+			const v: unknown = JSON.parse(raw);
+			return typeof v === 'string' ? v : undefined;
+		} catch {
+			return raw;
+		}
+	});
 	let used = $derived(spool.initial - spool.remaining);
 
 	// --- inherited fields ---------------------------------------------------
@@ -596,6 +610,9 @@
 				href={vendor ? params.selectHref(page.url.searchParams, 'vendor', vendor.id) : undefined}
 				emptyWeightShadowedBy={vendorTareShadowedBy}
 			/>
+
+			<MaterialDefaults vendor={vendor?.name} material={filament.material} type={tipo} />
+			<FilamentCalibrations filamentId={Number(filament.id)} readonly />
 		</div>
 	</div>
 </div>
