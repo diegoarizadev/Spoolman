@@ -4,6 +4,7 @@
 	import Field from '$components/Field.svelte';
 	import FieldGrid from '$components/FieldGrid.svelte';
 	import PrinterAms from './PrinterAms.svelte';
+	import PrinterVfa from './PrinterVfa.svelte';
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import { printerImageUrl, printerName, type Printer } from '$lib/api/printers';
 	import { splitList } from '$lib/printers/ams';
@@ -108,6 +109,7 @@
 			</FieldGrid>
 
 			<PrinterAms {printer} {onupdated} />
+			{#key printer.id}<PrinterVfa {printer} />{/key}
 		</div>
 	{/if}
 
