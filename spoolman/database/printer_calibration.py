@@ -17,6 +17,7 @@ async def create(
     printer_id: int,
     vfa_speed_min: float | None = None,
     vfa_speed_max: float | None = None,
+    nozzle_size: float | None = None,
     image_path: str | None = None,
     notes: str | None = None,
 ) -> models.PrinterCalibration:
@@ -26,6 +27,7 @@ async def create(
         printer_id=printer_id,
         vfa_speed_min=vfa_speed_min,
         vfa_speed_max=vfa_speed_max,
+        nozzle_size=nozzle_size,
         image_path=image_path,
         notes=notes,
     )

@@ -94,6 +94,7 @@ async def create(
             printer_id=body.printer_id,
             vfa_speed_min=body.vfa_speed_min,
             vfa_speed_max=body.vfa_speed_max,
+            nozzle_size=body.nozzle_size,
             notes=body.notes,
         )
         return PrinterCalibration.from_db(item)

@@ -246,6 +246,7 @@ class PrinterCalibration(Base):
     printer_id: Mapped[int] = mapped_column(ForeignKey("printer.id", ondelete="CASCADE"), index=True)
     vfa_speed_min: Mapped[float | None] = mapped_column()
     vfa_speed_max: Mapped[float | None] = mapped_column()
+    nozzle_size: Mapped[float | None] = mapped_column()
     image_path: Mapped[str | None] = mapped_column(String(512))
     notes: Mapped[str | None] = mapped_column(String(1024))
 

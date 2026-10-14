@@ -6,7 +6,7 @@ import {
 } from "@ant-design/icons";
 import { axiosInstance } from "@refinedev/simple-rest";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { App, Button, Card, Empty, Form, Input, InputNumber, Modal, Space, Tooltip } from "antd";
+import { App, Button, Card, Empty, Form, Input, InputNumber, Modal, Select, Space, Tooltip } from "antd";
 import { useEffect, useState } from "react";
 import { CalibrationImageStrip, CalibrationImagesField, saveCalibrationImages } from "../../components/calibrationImages";
 import { Stat } from "../../components/stat";
@@ -17,6 +17,7 @@ interface IPrinterVfa {
   registered: string;
   vfa_speed_min?: number;
   vfa_speed_max?: number;
+  nozzle_size?: number;
   images?: { id: number }[];
   notes?: string;
 }
@@ -35,7 +36,24 @@ async function fetchVfa(printerId: number): Promise<IPrinterVfa[]> {
 
 type ModalState = { mode: "create" } | { mode: "edit"; record: IPrinterVfa } | null;
 
-function VfaFormModal({ printerId, state, onClose }: { printerId: number; state: ModalState; onClose: () => void }) {
+function nozzleList(raw?: string): number[] {
+  return (raw ?? "")
+    .split(",")
+    .map((v) => Number(v.trim()))
+    .filter((n) => n > 0);
+}
+
+function VfaFormModal({
+  printerId,
+  nozzles,
+  state,
+  onClose,
+}: {
+  printerId: number;
+  nozzles?: string;
+  state: ModalState;
+  onClose: () => void;
+}) {
   const { message } = App.useApp();
   const queryClient = useQueryClient();
   const [form] = Form.useForm();
@@ -51,10 +69,12 @@ function VfaFormModal({ printerId, state, onClose }: { printerId: number; state:
       form.setFieldsValue(state.record);
     } else {
       form.resetFields();
+      const sizes = nozzleList(nozzles);
+      form.setFieldsValue({ nozzle_size: sizes.includes(0.4) ? 0.4 : sizes[0] });
     }
     setPending([]);
     setRemovedIds([]);
-  }, [state, form]);
+  }, [state, form, nozzles]);
 
   const resetAndClose = () => {
     form.resetFields();
@@ -100,6 +120,13 @@ function VfaFormModal({ printerId, state, onClose }: { printerId: number; state:
       destroyOnClose
     >
       <Form form={form} layout="vertical" onFinish={(values) => mutation.mutate(values)}>
+        <Form.Item label="Boquilla usada (mm)" name="nozzle_size" rules={[{ required: true }]}>
+          <Select
+            options={[...new Set([...nozzleList(nozzles), ...(state?.mode === "edit" && state.record.nozzle_size ? [state.record.nozzle_size] : [])])]
+              .sort((a, b) => a - b)
+              .map((n) => ({ label: `${n} mm`, value: n }))}
+          />
+        </Form.Item>
         <Form.Item label="Vel. mínima (mm/s)" name="vfa_speed_min" rules={[{ required: true }]}>
           <InputNumber style={{ width: "100%" }} />
         </Form.Item>
@@ -127,7 +154,7 @@ function VfaFormModal({ printerId, state, onClose }: { printerId: number; state:
   );
 }
 
-export function PrinterVfaSection({ printerId }: { printerId?: number }) {
+export function PrinterVfaSection({ printerId, nozzles }: { printerId?: number; nozzles?: string }) {
   const { message, modal } = App.useApp();
   const queryClient = useQueryClient();
   const [modalState, setModalState] = useState<ModalState>(null);
@@ -194,7 +221,7 @@ export function PrinterVfaSection({ printerId }: { printerId?: number }) {
                 <div style={{ flex: 1 }}>
                   <Stat
                     label={new Date(record.registered).toLocaleDateString()}
-                    value={`Vel. mínima: ${record.vfa_speed_min ?? "-"} mm/s · Vel. máxima: ${record.vfa_speed_max ?? "-"} mm/s`}
+                    value={`Vel. mínima: ${record.vfa_speed_min ?? "-"} mm/s · Vel. máxima: ${record.vfa_speed_max ?? "-"} mm/s${record.nozzle_size ? ` · Boquilla: ${record.nozzle_size} mm` : ""}`}
                   />
                   {record.notes && <div style={{ fontSize: 12, opacity: 0.7 }}>{record.notes}</div>}
                 </div>
@@ -219,7 +246,7 @@ export function PrinterVfaSection({ printerId }: { printerId?: number }) {
           </Space>
         )}
       </Card>
-      <VfaFormModal printerId={printerId} state={modalState} onClose={() => setModalState(null)} />
+      <VfaFormModal printerId={printerId} nozzles={nozzles} state={modalState} onClose={() => setModalState(null)} />
     </>
   );
 }

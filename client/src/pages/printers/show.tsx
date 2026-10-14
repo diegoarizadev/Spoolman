@@ -230,7 +230,7 @@ export const PrinterShow = () => {
             </Col>
 
             <Col xs={24}>
-              <PrinterVfaSection printerId={record?.id} />
+              <PrinterVfaSection printerId={record?.id} nozzles={record?.nozzle_diameters} />
             </Col>
 
             {record?.comment && (

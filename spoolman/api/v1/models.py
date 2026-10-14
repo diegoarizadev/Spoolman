@@ -1202,6 +1202,7 @@ class PrinterCalibration(BaseModel):
     printer: Printer = Field(description="The printer this VFA test was done for.")
     vfa_speed_min: float | None = Field(None, description="Lower bound of the problematic speed range in mm/s.")
     vfa_speed_max: float | None = Field(None, description="Upper bound of the problematic speed range in mm/s.")
+    nozzle_size: float | None = Field(None, description="Nozzle diameter in mm the test was run with.")
     images: list[CalibrationImage] = Field(default_factory=list, description="Evidence images.")
     notes: str | None = Field(None, max_length=1024, description="Free-text notes.")
 
@@ -1214,6 +1215,7 @@ class PrinterCalibration(BaseModel):
             printer=Printer.from_db(item.printer),
             vfa_speed_min=item.vfa_speed_min,
             vfa_speed_max=item.vfa_speed_max,
+            nozzle_size=item.nozzle_size,
             images=[CalibrationImage.from_db(img) for img in item.images],
             notes=item.notes,
         )
@@ -1223,10 +1225,12 @@ class PrinterCalibrationCreate(BaseModel):
     printer_id: int = Field(description="The printer this VFA test was done for.")
     vfa_speed_min: float | None = Field(None)
     vfa_speed_max: float | None = Field(None)
+    nozzle_size: float | None = Field(None, gt=0, description="Nozzle diameter in mm the test was run with.")
     notes: str | None = Field(None, max_length=1024)
 
 
 class PrinterCalibrationUpdate(BaseModel):
     vfa_speed_min: float | None = Field(None)
     vfa_speed_max: float | None = Field(None)
+    nozzle_size: float | None = Field(None, gt=0, description="Nozzle diameter in mm the test was run with.")
     notes: str | None = Field(None, max_length=1024)
