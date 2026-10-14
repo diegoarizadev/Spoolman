@@ -14,6 +14,7 @@
 		{ href: '/', label: m['nav.library'] },
 		{ href: '/dashboard', label: m['dashboard.dashboard'] },
 		{ href: '/purge', label: m['nav.purge'] },
+		{ href: '/printers', label: m['nav.printers'] },
 		{ href: '/labels', label: m['nav.labels'] },
 		{ href: '/settings', label: m['settings.header'] }
 	] satisfies { href: Pathname; label: () => string }[];
