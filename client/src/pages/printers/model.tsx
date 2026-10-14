@@ -1,6 +1,7 @@
 export interface IPrinter {
   id: number;
   registered: string;
+  name?: string;
   manufacturer: string;
   model: string;
   build_volume_x?: number;

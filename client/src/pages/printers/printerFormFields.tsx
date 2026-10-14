@@ -14,6 +14,11 @@ export function PrinterFormFields() {
     <>
       <Title level={5}>Identificación</Title>
       <Row gutter={16}>
+        <Col span={24}>
+          <Form.Item label="Nombre / alias" name="name">
+            <Input maxLength={64} placeholder="ej. A1 del taller" />
+          </Form.Item>
+        </Col>
         <Col span={12}>
           <Form.Item label="Fabricante" name="manufacturer" rules={[{ required: true }]}>
             <Input maxLength={64} placeholder="ej. Bambu Lab" />

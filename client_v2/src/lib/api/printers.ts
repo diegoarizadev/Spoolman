@@ -9,6 +9,8 @@ export interface Printer {
 	registered: string;
 	manufacturer: string;
 	model: string;
+	/** Alias to tell apart several printers of the same model. */
+	name?: string;
 	build_volume_x?: number;
 	build_volume_y?: number;
 	build_volume_z?: number;
@@ -83,7 +85,12 @@ export async function uploadPrinterImage(id: number, file: File): Promise<Printe
 
 export const printerImageUrl = (id: number) => `${API_BASE}/printer/${id}/image`;
 
-export const printerName = (p: Pick<Printer, 'manufacturer' | 'model'>) => `${p.manufacturer} ${p.model}`;
+/** The model as "Manufacturer Model", without the alias. */
+export const printerModel = (p: Pick<Printer, 'manufacturer' | 'model'>) => `${p.manufacturer} ${p.model}`;
+
+/** What identifies the printer: its alias when it has one, else the model. */
+export const printerName = (p: Pick<Printer, 'manufacturer' | 'model' | 'name'>) =>
+	p.name?.trim() || printerModel(p);
 
 export const listLocations = (signal?: AbortSignal) => getJson<string[]>('/location', {}, signal);
 

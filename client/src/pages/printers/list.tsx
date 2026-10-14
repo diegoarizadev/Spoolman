@@ -40,6 +40,7 @@ export const PrinterList = () => {
             ) : null
           }
         />
+        <Table.Column title="Nombre" dataIndex="name" sorter />
         <Table.Column title="Fabricante" dataIndex="manufacturer" sorter />
         <Table.Column title="Modelo" dataIndex="model" sorter />
         <Table.Column

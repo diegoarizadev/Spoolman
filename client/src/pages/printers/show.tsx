@@ -28,7 +28,7 @@ export const PrinterShow = () => {
   return (
     <Show
       isLoading={isLoading}
-      title={record ? `${record.manufacturer} ${record.model}` : ""}
+      title={record ? record.name || `${record.manufacturer} ${record.model}` : ""}
       headerButtons={() => (
         <>
           <Button icon={<EditOutlined />} onClick={() => record && edit("printer", record.id)}>
@@ -67,6 +67,11 @@ export const PrinterShow = () => {
               />
             )}
             <Row gutter={[16, 12]}>
+              {record?.name && (
+                <Col span={24}>
+                  <Stat label="Nombre" value={record.name} />
+                </Col>
+              )}
               <Col span={24}>
                 <Stat label="Fabricante" value={record?.manufacturer} />
               </Col>

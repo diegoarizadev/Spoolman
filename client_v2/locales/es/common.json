@@ -455,6 +455,8 @@
     "printers.vfa.deleteLine": "Se eliminará esta prueba VFA y sus fotos.",
     "printers.vfa.deleteFailed": "No se pudo eliminar la prueba VFA",
     "printers.ams.needTwo": "se necesitan al menos 2 filamentos distintos",
+    "printers.fields.name": "Nombre / alias",
+    "printers.fields.namePlaceholder": "ej. A1 del taller",
     "calibration.type.temperature": "Temperatura",
     "calibration.desc.temperature": "Imprime una torre con bloques a distintas temperaturas y evalúa cuál da el mejor resultado (menos stringing, mejor adhesión entre capas, voladizos más limpios). Registra la temperatura del bloque ganador.",
     "calibration.type.pressureAdvance": "Pressure Advance",

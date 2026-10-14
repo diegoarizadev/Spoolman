@@ -115,6 +115,7 @@
 	}
 
 	const columns = [
+		{ field: 'name', label: () => m['printers.fields.name']() },
 		{ field: 'manufacturer', label: () => m['printers.fields.manufacturer']() },
 		{ field: 'model', label: () => m['printers.fields.model']() }
 	];
@@ -172,6 +173,7 @@
 										<img class="thumb" src={printerImageUrl(row.id)} alt="" loading="lazy" />
 									{/if}
 								</td>
+								<td class="alias">{row.name ?? ''}</td>
 								<td>{row.manufacturer}</td>
 								<td>{row.model}</td>
 								<td class="num">{volume(row)}</td>
@@ -246,6 +248,9 @@
 />
 
 <style>
+	.alias {
+		font-weight: 600;
+	}
 	.page {
 		flex: 1;
 		min-height: 0;

@@ -81,6 +81,7 @@
 		'connectivity'
 	];
 
+	let name = $state('');
 	let manufacturer = $state('');
 	let model = $state('');
 	let chamberEnclosed = $state(false);
@@ -104,6 +105,7 @@
 	// into the next one.
 	$effect(() => {
 		if (!open) return;
+		name = editing?.name ?? '';
 		manufacturer = editing?.manufacturer ?? '';
 		model = editing?.model ?? '';
 		chamberEnclosed = editing?.chamber_enclosed ?? false;
@@ -135,6 +137,7 @@
 			const n = parseFloat(nums[k].replace(',', '.'));
 			out[k] = Number.isFinite(n) ? n : null;
 		}
+		out.name = name.trim() || null;
 		for (const k of TEXT_KEYS) out[k] = texts[k].trim() || null;
 		try {
 			let saved = editing ? await updatePrinter(editing.id, body) : await createPrinter(body);
@@ -170,6 +173,14 @@
 	<div class="body">
 		<h3>{m['printers.section.identity']()}</h3>
 		<FieldGrid labelWidth="170px">
+			<Field label={m['printers.fields.name']()}>
+				<input
+					class="in"
+					maxlength="64"
+					placeholder={m['printers.fields.namePlaceholder']()}
+					bind:value={name}
+				/>
+			</Field>
 			<Field label={m['printers.fields.manufacturer']()}>
 				<input class="in" maxlength="64" placeholder="Bambu Lab" bind:value={manufacturer} />
 			</Field>

@@ -1038,6 +1038,12 @@ class Printer(BaseModel):
     registered: SpoolmanDateTime = Field(description="When the printer was registered. UTC Timezone.")
     manufacturer: str = Field(max_length=64, description="Printer manufacturer.", examples=["Bambu Lab"])
     model: str = Field(max_length=64, description="Printer model name.", examples=["A1"])
+    name: str | None = Field(
+        None,
+        max_length=64,
+        description="Alias to identify this particular printer, e.g. when you own several of the same model.",
+        examples=["Workshop A1"],
+    )
     build_volume_x: float | None = Field(None, description="Build volume width in mm.")
     build_volume_y: float | None = Field(None, description="Build volume depth in mm.")
     build_volume_z: float | None = Field(None, description="Build volume height in mm.")
@@ -1084,6 +1090,7 @@ class Printer(BaseModel):
             registered=item.registered,
             manufacturer=item.manufacturer,
             model=item.model,
+            name=item.name,
             build_volume_x=item.build_volume_x,
             build_volume_y=item.build_volume_y,
             build_volume_z=item.build_volume_z,
@@ -1119,6 +1126,7 @@ class Printer(BaseModel):
 class PrinterParameters(BaseModel):
     manufacturer: str = Field(max_length=64, description="Printer manufacturer.")
     model: str = Field(max_length=64, description="Printer model name.")
+    name: str | None = Field(None, max_length=64, description="Alias to identify this particular printer.")
     build_volume_x: float | None = Field(None)
     build_volume_y: float | None = Field(None)
     build_volume_z: float | None = Field(None)
@@ -1154,6 +1162,7 @@ class PrinterCreate(PrinterParameters):
 class PrinterUpdate(BaseModel):
     manufacturer: str | None = Field(None, max_length=64)
     model: str | None = Field(None, max_length=64)
+    name: str | None = Field(None, max_length=64)
     build_volume_x: float | None = Field(None)
     build_volume_y: float | None = Field(None)
     build_volume_z: float | None = Field(None)

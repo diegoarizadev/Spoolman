@@ -41,6 +41,7 @@
 			{/if}
 
 			<FieldGrid labelWidth="170px">
+				{#if printer.name}<Field label={m['printers.fields.name']()}>{printer.name}</Field>{/if}
 				<Field label={m['printers.fields.manufacturer']()}>{printer.manufacturer}</Field>
 				<Field label={m['printers.fields.model']()}>{printer.model}</Field>
 				{#if printer.sku}<Field label={m['printers.fields.sku']()} mono>{printer.sku}</Field>{/if}

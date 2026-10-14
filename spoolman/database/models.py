@@ -273,6 +273,8 @@ class Printer(Base):
     registered: Mapped[datetime] = mapped_column()
     manufacturer: Mapped[str] = mapped_column(String(64), index=True)
     model: Mapped[str] = mapped_column(String(64))
+    # Alias to tell apart several printers of the same model ("Taller", "Oficina"...)
+    name: Mapped[str | None] = mapped_column(String(64))
 
     # Build volume, mm
     build_volume_x: Mapped[float | None] = mapped_column()

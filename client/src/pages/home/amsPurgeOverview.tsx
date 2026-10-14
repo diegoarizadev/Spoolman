@@ -39,7 +39,7 @@ function PrinterAmsCard({ printer }: { printer: IPrinter }) {
   return (
     <Card
       size="small"
-      title={`${printer.manufacturer} ${printer.model} · AMS`}
+      title={`${printer.name || `${printer.manufacturer} ${printer.model}`} · AMS`}
       extra={
         <Button
           type="primary"
