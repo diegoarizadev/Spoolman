@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ScanButton from './ScanButton.svelte';
 	import * as m from '$lib/paraglide/messages';
 
 	interface Props {
@@ -8,9 +9,21 @@
 		onkeydown?: (e: KeyboardEvent) => void;
 		onfocus?: () => void;
 		fullWidth?: boolean;
+		/** Shows a camera button inside the box; it gets the text the scanner read. */
+		onscan?: (text: string) => void;
+		scanLabel?: string;
 	}
 
-	let { value, placeholder = '', oninput, onkeydown, onfocus, fullWidth = false }: Props = $props();
+	let {
+		value,
+		placeholder = '',
+		oninput,
+		onkeydown,
+		onfocus,
+		fullWidth = false,
+		onscan,
+		scanLabel = ''
+	}: Props = $props();
 </script>
 
 <div class="search" class:full={fullWidth}>
@@ -23,6 +36,9 @@
 		onfocus={() => onfocus?.()}
 		aria-label={m['common.search']()}
 	/>
+	{#if onscan}
+		<ScanButton label={scanLabel} hint={m['scanner.searchHint']()} onresult={onscan} />
+	{/if}
 </div>
 
 <style>

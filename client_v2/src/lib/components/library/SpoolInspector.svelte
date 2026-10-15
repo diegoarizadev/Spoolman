@@ -7,6 +7,7 @@
 	import ConfirmDialog from '../ConfirmDialog.svelte';
 	import NumberInput from '../NumberInput.svelte';
 	import EditableField from '../EditableField.svelte';
+	import ScanButton from '../ScanButton.svelte';
 	import Combobox from '../Combobox.svelte';
 	import Scale from '@lucide/svelte/icons/scale';
 	import Printer from '@lucide/svelte/icons/printer';
@@ -460,7 +461,18 @@
 					/>
 				</Field>
 				<Field label={m['spool.fields.lotNr']()} help={m['spool.fieldsHelp.lotNr']()}>
-					<EditableField value={spool.lot} mono oninput={(v) => set({ lot: v })} />
+					<span class="with-scan">
+						<EditableField value={spool.lot} mono oninput={(v) => set({ lot: v })} />
+						<ScanButton
+							label={m['scanner.scanLot']()}
+							title={m['scanner.lotTitle']()}
+							hint={m['scanner.lotHint']()}
+							onresult={(text) => {
+								if (text.length > 64) toasts.error(m['scanner.lotTooLong']());
+								else set({ lot: text });
+							}}
+						/>
+					</span>
 				</Field>
 				<!-- Blank in any of the three below means "follow the filament", which is
 				     what `onclear` restores; the placeholder is the value that then applies. -->
@@ -611,6 +623,11 @@
 </div>
 
 <style>
+	.with-scan {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
 	.insp {
 		/* The two-column grid below needs to react to this panel's own width, not
 		   the viewport's — the library sidebar can leave it squeezed well before

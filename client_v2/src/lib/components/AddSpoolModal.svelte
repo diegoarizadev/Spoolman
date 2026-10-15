@@ -4,6 +4,8 @@
 	import Button from './Button.svelte';
 	import NumberInput from './NumberInput.svelte';
 	import Combobox from './Combobox.svelte';
+	import ScanButton from './ScanButton.svelte';
+	import { toasts } from '$lib/stores/toasts.svelte';
 	import DateTimeField from './DateTimeField.svelte';
 	import X from '@lucide/svelte/icons/x';
 	import Plus from '@lucide/svelte/icons/plus';
@@ -789,7 +791,21 @@
 							     didn't open a popup to find that out. -->
 							<span class="hint">{m['add.locationHint']()}</span>
 						</label>
-						<label>{m['spool.fields.lotNr']()}<input class="mono" bind:value={lot} placeholder="—" /></label>
+						<label>
+							{m['spool.fields.lotNr']()}
+							<span class="with-scan">
+								<input class="mono" bind:value={lot} placeholder="—" />
+								<ScanButton
+									label={m['scanner.scanLot']()}
+									title={m['scanner.lotTitle']()}
+									hint={m['scanner.lotHint']()}
+									onresult={(text) => {
+										if (text.length > 64) toasts.error(m['scanner.lotTooLong']());
+										else lot = text;
+									}}
+								/>
+							</span>
+						</label>
 					</div>
 
 					<div class="form money">
@@ -884,6 +900,15 @@
 {/if}
 
 <style>
+	.with-scan {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+	.with-scan input {
+		flex: 1;
+		min-width: 0;
+	}
 	.overlay {
 		position: fixed;
 		inset: 0;

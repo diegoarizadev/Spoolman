@@ -13,11 +13,23 @@
 	import * as m from '$lib/paraglide/messages';
 	import X from '@lucide/svelte/icons/x';
 
+	interface BarcodeDetectorLike {
+		detect(source: HTMLVideoElement): Promise<{ rawValue: string }[]>;
+	}
+	interface BarcodeDetectorCtor {
+		new (options?: { formats?: string[] }): BarcodeDetectorLike;
+		getSupportedFormats(): Promise<string[]>;
+	}
+
 	interface Props {
 		open: boolean;
 		onclose?: () => void;
+		/** Hand back the decoded text instead of opening a spool (used to fill a field or a search). */
+		onresult?: (text: string) => void;
+		title?: string;
+		hint?: string;
 	}
-	let { open, onclose }: Props = $props();
+	let { open, onclose, onresult, title, hint }: Props = $props();
 
 	let video = $state<HTMLVideoElement | null>(null);
 	let error = $state<string | null>(null);
@@ -73,10 +85,49 @@
 	// Library, and a purge opens in the purge library. Non-Spoolman codes are
 	// ignored so the camera keeps scanning.
 	function onDecode(result: QrScanner.ScanResult) {
+		if (onresult) {
+			const text = result.data.trim();
+			if (!text) return;
+			close();
+			onresult(text);
+			return;
+		}
 		const ref = parseSpoolCode(result.data);
 		if (ref === null) return;
 		close();
 		goto(resolve(ref.kind === 'purge' ? `/purge?view=${ref.id}` : `/?sel=${ref.kind}:${ref.id}`));
+	}
+
+	// qr-scanner only reads QR codes. When the caller wants the text of whatever is on the
+	// spool (a lot number, a search), also poll the browser's own barcode detector, which
+	// reads the 1D codes (Code 128, EAN, ...) that spool labels usually carry. Browsers
+	// without it (Safari, Firefox) keep reading QR codes only.
+	async function readBarcodes(el: HTMLVideoElement, stopped: () => boolean) {
+		const Detector = (window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector;
+		if (!Detector) return;
+		let detector: BarcodeDetectorLike;
+		try {
+			const formats = (await Detector.getSupportedFormats()).filter((f) => f !== 'qr_code');
+			if (formats.length === 0) return;
+			detector = new Detector({ formats });
+		} catch {
+			return;
+		}
+		while (!stopped()) {
+			await new Promise((r) => setTimeout(r, 250));
+			if (stopped() || el.readyState < 2) continue;
+			try {
+				const found = await detector.detect(el);
+				const text = found[0]?.rawValue?.trim();
+				if (text && !stopped()) {
+					close();
+					onresult?.(text);
+					return;
+				}
+			} catch {
+				// A frame that cannot be read is just skipped.
+			}
+		}
 	}
 
 	/** Map a getUserMedia DOMException to a friendly reason (by its `name`). */
@@ -158,6 +209,7 @@
 				}
 				active = scanner;
 				currentCamera = streamingCameraId() ?? '';
+				if (onresult) void readBarcodes(el, () => cancelled);
 				// The camera is already running, so a failed listing only costs the picker.
 				const list = await navigator.mediaDevices.enumerateDevices().catch(() => []);
 				if (!cancelled) cameras = videoCameras(list);
@@ -192,17 +244,17 @@
 			class="modal"
 			role="dialog"
 			aria-modal="true"
-			aria-label={m['scanner.title']()}
+			aria-label={title ?? m['scanner.title']()}
 			tabindex="-1"
 			onclick={(e) => e.stopPropagation()}
 			onkeydown={(e) => e.stopPropagation()}
 		>
 			<div class="modal-head">
-				<span class="title">{m['scanner.title']()}</span>
+				<span class="title">{title ?? m['scanner.title']()}</span>
 				<button class="x" onclick={close} aria-label={m['buttons.close']()}><X size={16} /></button>
 			</div>
 
-			<p class="hint">{m['scanner.description']()}</p>
+			<p class="hint">{hint ?? m['scanner.description']()}</p>
 
 			<div class="stage">
 				<video bind:this={video} playsinline></video>
@@ -237,7 +289,7 @@
 		position: fixed;
 		inset: 0;
 		background: rgba(0, 0, 0, 0.6);
-		z-index: 50;
+		z-index: 70;
 		display: flex;
 		align-items: flex-start;
 		justify-content: center;

@@ -272,6 +272,11 @@
 		}}
 		onfocus={() => (open = true)}
 		onkeydown={onKeydown}
+		onscan={(text) => {
+			query = text;
+			open = true;
+		}}
+		scanLabel={m['scanner.scanSearch']()}
 		{fullWidth}
 	/>
 
